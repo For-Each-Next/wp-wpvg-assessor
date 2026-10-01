@@ -2,7 +2,10 @@
 (() => {
     const options = globalThis.__fixtureOptions ?? {};
     const listTitle = "WikiProject:电子游戏/新进条目";
-    const pageTitle = options.pageTitle ?? "Example game";
+    const pageTitle =
+        new URL(location.href).searchParams.get("page") ??
+        options.pageTitle ??
+        "Example game";
     const subjectTitle = pageTitle.replace(/^Talk:/u, "");
     const talkTitle = `Talk:${subjectTitle}`;
     const timestamp = "2026-10-01T01:00:00Z";
@@ -19,24 +22,50 @@
             "}}",
         ].join("\n");
     const body = "== Discussion ==\nKeep this discussion exactly.\n";
+    const persisted = JSON.parse(
+        sessionStorage.getItem("fixture-pages") ?? "{}",
+    );
+    const talkPages = persisted.talkPages ?? {};
+    talkPages[talkTitle] ??= `${lead}\n\n${body}`;
     const fixture = {
-        calls: [],
+        calls: JSON.parse(sessionStorage.getItem("fixture-calls") ?? "[]"),
         posts: JSON.parse(sessionStorage.getItem("fixture-posts") ?? "[]"),
         notifications: [],
-        talkText: `${lead}\n\n${body}`,
-        base: "2026-09-30T23:00:00Z",
+        talkPages,
+        get talkText() {
+            return talkPages[talkTitle];
+        },
+        set talkText(value) {
+            talkPages[talkTitle] = value;
+        },
+        base: persisted.base ?? "2026-09-30T23:00:00Z",
         failList: Boolean(options.failList),
         failTalk: Boolean(options.failTalk),
         conflict: Boolean(options.conflict),
-        listText: [
-            "== 2026年 ==",
-            options.alreadyRegistered
-                ? `* 9月30日 - {{vgc|${subjectTitle}}}`
-                : "* 9月30日 - {{vgc|Earlier game}}",
-            "* 9月29日 - 無新條目",
-            "",
-        ].join("\n"),
+        listConflict: Boolean(options.listConflict),
+        failTalkTitle: options.failTalkTitle ?? null,
+        listText:
+            persisted.listText ??
+            [
+                "== 2026年 ==",
+                options.alreadyRegistered
+                    ? `* 9月30日 - {{vgc|${subjectTitle}}}`
+                    : "* 9月30日 - {{vgc|Earlier game}}",
+                "* 9月29日 - 無新條目",
+                "",
+            ].join("\n"),
     };
+    function persistPages() {
+        sessionStorage.setItem(
+            "fixture-pages",
+            JSON.stringify({
+                talkPages,
+                listText: fixture.listText,
+                base: fixture.base,
+            }),
+        );
+    }
+    persistPages();
     globalThis.__fixture = fixture;
     document.documentElement.lang = options.locale ?? "en";
     const loadHold = options.holdLoad
@@ -66,6 +95,10 @@
     class Api {
         async get(params) {
             fixture.calls.push(structuredClone(params));
+            sessionStorage.setItem(
+                "fixture-calls",
+                JSON.stringify(fixture.calls),
+            );
             await loadHold;
             if (options.loadError)
                 throw new Error("The fixture is unavailable");
@@ -80,7 +113,9 @@
             }
             const titles = String(params.titles ?? "").split("|");
             if (params.prop === "info") {
-                return { query: { pages: [{ title: subjectTitle, ns: 0 }] } };
+                return {
+                    query: { pages: titles.map((title) => ({ title, ns: 0 })) },
+                };
             }
             if (params.rvdir === "newer") {
                 return {
@@ -92,7 +127,8 @@
                                     timestamp:
                                         title === "Earlier game"
                                             ? "2026-09-30T01:00:00Z"
-                                            : creationDate,
+                                            : (options.creationDates?.[title] ??
+                                              creationDate),
                                 },
                             ],
                         })),
@@ -104,8 +140,10 @@
                     curtimestamp: timestamp,
                     query: {
                         pages: titles.map((title) => {
-                            if (title === talkTitle)
-                                return revisionPage(title, fixture.talkText, 1);
+                            if (title.startsWith("Talk:")) {
+                                talkPages[title] ??= `${lead}\n\n${body}`;
+                                return revisionPage(title, talkPages[title], 1);
+                            }
                             if (title === listTitle)
                                 return revisionPage(
                                     title,
@@ -134,24 +172,28 @@
             if (params.title === listTitle) {
                 if (fixture.failList)
                     throw new Error("Registration temporarily unavailable");
+                if (fixture.listConflict)
+                    throw { error: { code: "editconflict" } };
                 fixture.listText = params.text;
-            } else if (params.title === talkTitle) {
+            } else if (params.title.startsWith("Talk:")) {
                 await talkHold;
-                if (fixture.failTalk)
+                if (fixture.failTalk || fixture.failTalkTitle === params.title)
                     throw new Error("Talk page temporarily unavailable");
                 if (fixture.conflict) {
                     fixture.conflict = false;
                     fixture.base = "2026-10-01T00:30:00Z";
-                    fixture.talkText =
+                    talkPages[params.title] =
                         "{{Concurrent lead}}\n\n== Discussion ==\nConcurrent discussion survives.\n";
+                    persistPages();
                     throw { error: { code: "editconflict" } };
                 }
-                fixture.talkText = params.text;
+                talkPages[params.title] = params.text;
             } else {
                 throw new Error(
                     `Unexpected offline edit title: ${params.title}`,
                 );
             }
+            persistPages();
             return { edit: { result: "Success" } };
         }
     }
@@ -183,6 +225,7 @@
         wgNamespaceNumber: pageTitle.startsWith("Talk:") ? 1 : 0,
         wgPageName: pageTitle,
         wgUserLanguage: options.locale ?? "en",
+        wgUserName: options.userName ?? "Fixture editor",
         wgAction: "view",
         wgPageContentModel: "wikitext",
     };

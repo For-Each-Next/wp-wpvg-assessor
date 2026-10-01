@@ -55,7 +55,7 @@ test("localizes assessment codes without changing stored values", () => {
     assert.equal(simplified.text("assessmentImportance.top"), "极高");
     assert.equal(
         simplified.text("assessmentImportance.notVideoGame"),
-        "非电子游戏条目",
+        "非专题条目",
     );
     assert.equal(traditional.text("assessmentClass.unassessed"), "未評");
     assert.equal(traditional.text("assessmentClass.ga"), "優良");
@@ -63,7 +63,7 @@ test("localizes assessment codes without changing stored values", () => {
     assert.equal(traditional.text("assessmentImportance.top"), "極高");
     assert.equal(
         traditional.text("assessmentImportance.notVideoGame"),
-        "非電子遊戲條目",
+        "非專題條目",
     );
 });
 

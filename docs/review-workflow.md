@@ -3,7 +3,10 @@
 The gadget opens from the page tools on Chinese Wikipedia. It resolves the
 subject and talk titles, reads the subject's creation information, loads the
 talk-page lead and new-page list, and prepares registration before showing
-the form.
+the form. Successful reads and in-flight loads are reused on subsequent
+openings. A staged page restores its reviewed source and summaries. When
+moving to another page in the same tab, the shared list snapshot and cached
+creation times are reused.
 
 ## Assessment and review
 
@@ -18,7 +21,7 @@ classes, while other known grades and custom codes can be entered directly.
 grades such as D, B+, A, and FL stay out of the menu even when they are the
 current class; their localized labels remain visible in the input.
 
-The **Not a video game article** importance choice removes existing Video
+The **Out of scope** importance choice removes existing Video
 games banner aliases and omits that banner from the proposed shell. Video
 games task forces, maintenance flags, and new-page registration become
 unavailable. The shared `{{WPBS}}` class and other project selections remain
@@ -48,9 +51,38 @@ selection. Registration requires the exact reviewed lead to contain a
 recognizable Video games assessment, and the save workflow ignores stale
 registration selections when the assessment is outside that project.
 
-Choosing **Save** freezes the controls while the requested saves run. Closing
+Choosing **Submit** freezes the controls while the requested saves run. Closing
 or canceling before saving leaves the wiki unchanged. Successful completion
 refreshes the current page.
+
+## Background drafts and batch submission
+
+**Stage (暂存)** adds the current page's draft and keeps the dialog open
+without a wiki write. The same button becomes **Unstage (取消暂存)** for a
+queued page. Unstaging removes only that page, discards any prepared batch,
+and keeps the current form edits available. Staging again captures those
+edits as a new draft. The draft captures the exact reviewed lead,
+assessment choices, summaries, and registration selection. Drafts use browser
+session storage per wiki and account, surviving navigation and reloads in
+the same tab. Storage failures keep the dialog open with an error.
+
+The existing submit action shows **Submit (+N)** for the other queued pages;
+the current page is included once even if it has already been staged. With
+pending drafts, the first submit action refreshes the list once and prepares
+one registration change for the entire batch. The dialog presents that
+combined comparison and editable list summary together with the other
+pages' reviewed talk leads and summaries. The next submit action writes
+those exact reviewed values. Changing assessment controls, source, summaries,
+or registration selection requires another batch review.
+
+Canceling batch preparation ignores its late results and leaves the queued
+drafts intact. Submission checks that the queued drafts still match the
+reviewed batch. It writes registration once, then saves each talk assessment
+with the existing talk-save workflow. Confirmed completion removes that
+page from the queue; a failure retains unfinished pages. Once registration
+has been confirmed, remaining drafts no longer request registration on retry.
+Registration conflicts and uncertain outcomes stop the batch and require a
+fresh review instead of an automatic retry.
 
 ## Conflicts and failures
 

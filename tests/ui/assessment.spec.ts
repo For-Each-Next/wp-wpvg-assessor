@@ -16,7 +16,7 @@ const readySource = (page: Page) =>
 const registration = (page: Page) =>
     page.getByRole("checkbox", { name: /^Register the page/ });
 const save = (page: Page) =>
-    page.getByRole("button", { name: "Save", exact: true });
+    page.getByRole("button", { name: "Submit", exact: true });
 
 test("the Pokemon-series assessment preserves shell metadata and merged project details through review and save", async ({
     page,
@@ -81,7 +81,7 @@ test("the Pokemon-series assessment preserves shell metadata and merged project 
     );
 });
 
-test("a non-video-game choice retains shared class and other projects on a narrow screen", async ({
+test("an out-of-scope choice retains shared class and other projects on a narrow screen", async ({
     page,
 }) => {
     await page.setViewportSize({ width: 360, height: 900 });
@@ -92,10 +92,10 @@ test("a non-video-game choice retains shared class and other projects on a narro
     await expect(page.locator(".avgp-page-context")).toHaveCount(0);
     await expect(dialog.locator(".cdx-label__optional-flag")).toHaveCount(0);
     await expect(registration(page)).toBeChecked();
-    await chooseOption(page, "Importance", "Not a video game article");
+    await chooseOption(page, "Importance", "Out of scope");
     await expect(
         page.getByRole("combobox", { name: "Importance", exact: true }),
-    ).toContainText("Not a video game article");
+    ).toContainText("Out of scope");
     for (const name of ["Sega", "Pokemon", "Reassess", "Needs infobox"]) {
         await expect(
             page.getByRole("checkbox", { name, exact: true }),
@@ -184,7 +184,7 @@ test("a shell without Video games starts outside the project and keeps other-pro
     });
     await expect(
         page.getByRole("combobox", { name: "Importance", exact: true }),
-    ).toContainText("Not a video game article");
+    ).toContainText("Out of scope");
     await expect(registration(page)).toHaveCount(0);
     await expect(
         page.getByRole("checkbox", { name: "Pokemon", exact: true }),
@@ -212,7 +212,7 @@ test("manual removal of Video games synchronizes scope and re-enabling it keeps 
     await expect(readySource(page)).toHaveValue(manual);
     await expect(
         page.getByRole("combobox", { name: "Importance", exact: true }),
-    ).toContainText("Not a video game article");
+    ).toContainText("Out of scope");
     await expect(
         page.getByRole("combobox", { name: "Shared class", exact: true }),
     ).toHaveValue("C");
@@ -343,7 +343,7 @@ test("Chinese shared class displays typed Bplus and b+ as 乙上 and accepts loc
     await sharedClass.focus();
     await source.click();
     await expect(source).toHaveValue(manual);
-    await page.getByRole("button", { name: "保存", exact: true }).click();
+    await page.getByRole("button", { name: "提交", exact: true }).click();
     await expect.poll(() => getPosts(page)).toHaveLength(2);
     expect((await getPosts(page))[1].text).toBe(
         `${manual}\n\n== Discussion ==\nKeep this discussion exactly.\n`,
@@ -623,10 +623,66 @@ for (const width of [360, 1440]) {
         expect(dimensions.bodyScrollWidth).toBeLessThanOrEqual(
             dimensions.bodyWidth + 1,
         );
-        await expect(save(page)).toBeInViewport();
-        await expect(
-            page.getByRole("button", { name: "Cancel", exact: true }).last(),
-        ).toBeInViewport();
+        const footer = dialog.locator(".cdx-dialog__footer");
+        const footerButtons = footer.getByRole("button");
+        await expect(footerButtons).toHaveText(["Cancel", "Stage", "Submit"]);
+        const cancel = footer.getByRole("button", {
+            name: "Cancel",
+            exact: true,
+        });
+        const store = footer.getByRole("button", {
+            name: "Stage",
+            exact: true,
+        });
+        const submit = footer.getByRole("button", {
+            name: "Submit",
+            exact: true,
+        });
+        for (const [button, action, weight] of [
+            [cancel, "destructive", "quiet"],
+            [store, "default", "normal"],
+            [submit, "progressive", "primary"],
+        ] as const) {
+            await expect(button).toHaveClass(
+                new RegExp(`\\bcdx-button--action-${action}\\b`, "u"),
+            );
+            await expect(button).toHaveClass(
+                new RegExp(`\\bcdx-button--weight-${weight}\\b`, "u"),
+            );
+            await expect(button).toBeInViewport({ ratio: 1 });
+        }
+        const buttonBounds = await footerButtons.evaluateAll((buttons) =>
+            buttons.map((button) => {
+                const bounds = button.getBoundingClientRect();
+                return {
+                    left: bounds.left,
+                    right: bounds.right,
+                    top: bounds.top,
+                    bottom: bounds.bottom,
+                };
+            }),
+        );
+        for (let index = 1; index < buttonBounds.length; index += 1) {
+            expect(buttonBounds[index - 1].right).toBeLessThanOrEqual(
+                buttonBounds[index].left,
+            );
+            expect(buttonBounds[index].top).toBeLessThan(
+                buttonBounds[index - 1].bottom,
+            );
+            expect(buttonBounds[index].bottom).toBeGreaterThan(
+                buttonBounds[index - 1].top,
+            );
+        }
+        await cancel.focus();
+        await expect(cancel).toBeFocused();
+        await page.keyboard.press("Tab");
+        await expect(store).toBeFocused();
+        await page.keyboard.press("Tab");
+        await expect(submit).toBeFocused();
+        await page.keyboard.press("Shift+Tab");
+        await expect(store).toBeFocused();
+        await page.keyboard.press("Shift+Tab");
+        await expect(cancel).toBeFocused();
         const screenshotDirectory = process.env.WPVG_SCREENSHOT_DIR;
         if (screenshotDirectory) {
             await mkdir(screenshotDirectory, { recursive: true });
@@ -774,8 +830,8 @@ for (const [
     sourceLabel,
     saveLabel,
 ] of [
-    ["zh-CN", "zh-Hans", "通用评级", "乙", "待保存的导言源码", "保存"],
-    ["zh-TW", "zh-Hant", "通用評級", "乙", "待儲存的導言原始碼", "儲存"],
+    ["zh-CN", "zh-Hans", "通用评级", "乙", "待保存的导言源码", "提交"],
+    ["zh-TW", "zh-Hant", "通用評級", "乙", "待儲存的導言原始碼", "提交"],
 ]) {
     test(`${locale} localizes controls while saving the original assessment codes`, async ({
         page,

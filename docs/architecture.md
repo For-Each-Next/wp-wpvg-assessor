@@ -12,13 +12,19 @@ workflows, then supplies them to the assessment feature.
 
 - `app/` coordinates loading, preparation, and reviewed saves. Its contracts
   own consumer requirements; workflows receive callbacks for external work.
+  Background drafts and cached dialog loads use an injected session store.
+  Batch preparation refreshes the registration list and composes one proposed
+  list edit; submission retains unfinished drafts after partial failures.
 - `domain/` owns assessment parsing, banner transformations, registration
   ordering, namespace rules, and text comparison. It has no runtime browser
   dependencies. `project-config.ts` holds the Chinese Wikipedia banner rules.
 - `platform/mediawiki/` validates API responses, reads page context and
   language, loads Codex, and performs timestamp-protected writes.
-- `platform/browser/` owns creation-time caching. Storage failures do not
-  prevent the workflow from fetching the needed data.
+- `platform/browser/` owns creation-time caching and the assessment session
+  store. The latter serializes reviewed drafts, page snapshots, dates, and
+  creation-time maps in session storage per wiki/account. It follows navigation
+  within one tab. Disposable cache failures allow normal fetching; failed
+  draft writes remain visible so the dialog can retain the user's work.
 - `features/assessment/` presents controls and previews and owns mounted
   dialog lifecycle. Each dialog and comparison component keeps its markup,
   behavior, and styles in adjacent `.vue`, `.ts`, and `.css` files.

@@ -2,6 +2,14 @@
     max-width: 76rem;
 }
 
+.avgp-dialog__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-75, 0.75rem);
+    justify-content: flex-end;
+    width: 100%;
+}
+
 .avgp-dialog__body {
     color: var(--color-base, #202122);
     display: grid;
@@ -38,6 +46,36 @@
 .avgp-source,
 .avgp-registration {
     min-inline-size: 0;
+}
+
+.avgp-staged-reviews {
+    min-inline-size: 0;
+}
+
+.avgp-staged-review + .avgp-staged-review {
+    border-block-start: var(--border-width-base, 1px) solid
+        var(--border-color-muted, #dadde3);
+    margin-block-start: var(--spacing-150, 1.5rem);
+    padding-block-start: var(--spacing-150, 1.5rem);
+}
+
+.avgp-dialog .avgp-staged-source {
+    background-color: var(--background-color-neutral-subtle, #f8f9fa);
+    border: var(--border-width-base, 1px) solid
+        var(--border-color-muted, #dadde3);
+    direction: ltr;
+    font-family: var(--font-family-monospace, monospace);
+    font-size: var(--font-size-small, 0.875rem);
+    line-height: var(--line-height-medium, 1.6);
+    margin: 0;
+    overflow-wrap: anywhere;
+    padding: var(--spacing-75, 0.75rem);
+    white-space: pre-wrap;
+}
+
+.avgp-staged-summary {
+    margin: 0;
+    overflow-wrap: anywhere;
 }
 
 .avgp-source {

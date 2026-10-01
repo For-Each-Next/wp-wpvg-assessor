@@ -11,13 +11,18 @@ import {
     getTalkPageTitle,
 } from "../platform/mediawiki/title.ts";
 import { createCreationTimeCacheStore } from "../platform/browser/creation-time-cache.ts";
+import { createAssessmentSessionStore } from "../platform/browser/assessment-session.ts";
 import projectConfig from "../domain/project-config.ts";
 import type { DialogPageContext } from "./dialog-contracts.ts";
-import { buildNewPageListSummary } from "../i18n/index.ts";
+import { buildNewPageListSummary, msg } from "../i18n/index.ts";
 import { startPageAssessor } from "../features/assessment/app.ts";
 import { createDialogWorkflow } from "./dialog-state.ts";
 import { createReviewedDialogSaveWorkflow } from "./save-dialog.ts";
 import { createTalkSaveWorkflow } from "./save-talk-assessment.ts";
+import {
+    createAssessmentStagingWorkflow,
+    createCachedDialogLoader,
+} from "./staged-assessments.ts";
 import { createLogger, type Logger } from "../shared/logging.ts";
 import { createActionNotifier } from "../platform/mediawiki/notifications.ts";
 
@@ -27,9 +32,31 @@ export function start(): void {
         level: window.wpvgAssessorConfig?.logLevel,
     });
     const adapters = createMediaWikiAdapters(logger);
+    const session = createAssessmentSessionStore(
+        logger.child("storage.assessment-session"),
+        JSON.stringify([
+            mw.config.get("wgDBname"),
+            mw.config.get("wgUserName"),
+        ]),
+    );
     const dialogWorkflow = createDialogWorkflow(
         {
-            fetchAssessmentPages: adapters.assessmentPages.fetchAssessmentPages,
+            async fetchAssessmentPages(api, talkTitle) {
+                const cachedList = session.read().newPageList;
+                if (cachedList != null) {
+                    return {
+                        newPageList: cachedList,
+                        talkPage: await adapters.pages.fetchPageText(
+                            api,
+                            talkTitle,
+                        ),
+                    };
+                }
+                return adapters.assessmentPages.fetchAssessmentPages(
+                    api,
+                    talkTitle,
+                );
+            },
             fetchPageCreationTimes: adapters.pages.fetchPageCreationTimes,
             fetchSubjectPageInfo: adapters.pages.fetchSubjectPageInfo,
             getSubjectPageTitle,
@@ -54,13 +81,47 @@ export function start(): void {
         },
         projectConfig,
     );
+    const cache = createCachedDialogLoader({
+        getTalkPageTitle,
+        loadDialogState: dialogWorkflow.loadDialogState,
+        logger: logger.child("workflow.dialog-cache"),
+        session,
+    });
+    const staging = createAssessmentStagingWorkflow(
+        {
+            changedBatchMessage: () => msg("dialog.batchChanged"),
+            fetchNewPageList: adapters.newPageList.fetchNewPageList,
+            fetchPageCreationTimes: adapters.pages.fetchPageCreationTimes,
+            logger: logger.child("workflow.staging"),
+            saveRegistration: dialogWorkflow.saveRegistration,
+            saveReviewedDialog,
+            session,
+        },
+        projectConfig,
+    );
 
     startPageAssessor({
         createDialogPageContext,
-        loadDialogState: dialogWorkflow.loadDialogState,
+        loadDialogState: cache.load,
         logger: logger.child("ui"),
         notify: createActionNotifier("wpvg-assessor"),
-        saveReviewedDialog,
+        async saveReviewedDialog(state, review, reportPhase) {
+            try {
+                return await saveReviewedDialog(state, review, reportPhase);
+            } finally {
+                cache.invalidate();
+            }
+        },
+        staging: {
+            ...staging,
+            async save(api, batch, reportPhase) {
+                try {
+                    return await staging.save(api, batch, reportPhase);
+                } finally {
+                    cache.invalidate();
+                }
+            },
+        },
     });
 }
 

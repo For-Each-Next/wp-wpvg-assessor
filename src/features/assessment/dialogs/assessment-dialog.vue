@@ -5,19 +5,37 @@
         :title="dialogTitle"
         :lang="interfaceLocale"
         :close-button-label="msg('dialog.cancel')"
-        :primary-action="{
-            actionType: 'progressive',
-            disabled: saving,
-            label: msg('dialog.save'),
-        }"
-        :default-action="{
-            disabled: saving,
-            label: msg('dialog.cancel'),
-        }"
-        @primary="onSave"
-        @default="onCancel"
         @update:open="onOpenChange"
     >
+        <template #footer>
+            <div class="avgp-dialog__actions">
+                <cdx-button
+                    action="destructive"
+                    weight="quiet"
+                    :disabled="saving"
+                    @click="onCancel"
+                >
+                    {{ msg("dialog.cancel") }}
+                </cdx-button>
+                <cdx-button
+                    v-if="stagingAvailable"
+                    action="default"
+                    weight="normal"
+                    :disabled="saving || preparing"
+                    @click="onStage"
+                >
+                    {{ stageLabel }}
+                </cdx-button>
+                <cdx-button
+                    action="progressive"
+                    weight="primary"
+                    :disabled="saving || preparing"
+                    @click="onSave"
+                >
+                    {{ submitLabel }}
+                </cdx-button>
+            </div>
+        </template>
         <div class="avgp-dialog__body">
             <div
                 class="avgp-status-region"
@@ -32,13 +50,13 @@
                     {{ status }}
                 </cdx-message>
                 <cdx-progress-bar
-                    v-if="saving"
+                    v-if="saving || preparing"
                     class="avgp-save-progress"
                     :aria-label="status || msg('dialog.saving')"
                 />
             </div>
 
-            <div class="avgp-assessment-grid" :aria-busy="saving">
+            <div class="avgp-assessment-grid" :aria-busy="saving || preparing">
                 <section
                     class="avgp-controls"
                     aria-labelledby="avgp-assessment-title"
@@ -47,7 +65,10 @@
                         {{ msg("dialog.assessment") }}
                     </h2>
                     <div class="avgp-rating-grid">
-                        <cdx-field class="avgp-section" :disabled="saving">
+                        <cdx-field
+                            class="avgp-section"
+                            :disabled="saving || preparing"
+                        >
                             <template #label>{{
                                 msg("dialog.class")
                             }}</template>
@@ -56,14 +77,17 @@
                                 :menu-items="classMenuItems"
                                 :menu-config="{ visibleItemLimit: 6 }"
                                 :aria-label="msg('dialog.class')"
-                                :disabled="saving"
+                                :disabled="saving || preparing"
                                 name="className"
                                 @update:selected="setClassName"
                                 @change="commitClassName"
                                 @blur="commitClassName"
                             />
                         </cdx-field>
-                        <cdx-field class="avgp-section" :disabled="saving">
+                        <cdx-field
+                            class="avgp-section"
+                            :disabled="saving || preparing"
+                        >
                             <template #label>{{
                                 msg("dialog.importance")
                             }}</template>
@@ -71,7 +95,7 @@
                                 :selected="assessment.importance"
                                 :menu-items="importanceOptions"
                                 :aria-label="msg('dialog.importance')"
-                                :disabled="saving"
+                                :disabled="saving || preparing"
                                 name="importance"
                                 @update:selected="setImportance"
                             />
@@ -81,7 +105,7 @@
                     <cdx-field
                         class="avgp-section"
                         :is-fieldset="true"
-                        :disabled="saving || videoGamesDisabled"
+                        :disabled="saving || preparing || videoGamesDisabled"
                     >
                         <template #label>{{
                             msg("dialog.taskForces")
@@ -91,7 +115,9 @@
                                 v-for="option in taskForceOptions"
                                 :key="option.id"
                                 :model-value="assessment.taskForces[option.id]"
-                                :disabled="saving || videoGamesDisabled"
+                                :disabled="
+                                    saving || preparing || videoGamesDisabled
+                                "
                                 :name="'taskForce-' + option.id"
                                 @update:model-value="
                                     setSelection(
@@ -109,7 +135,7 @@
                     <cdx-field
                         class="avgp-section"
                         :is-fieldset="true"
-                        :disabled="saving || videoGamesDisabled"
+                        :disabled="saving || preparing || videoGamesDisabled"
                     >
                         <template #label>{{
                             msg("dialog.maintenance")
@@ -119,7 +145,9 @@
                                 v-for="option in maintenanceOptions"
                                 :key="option.id"
                                 :model-value="assessment.maintenance[option.id]"
-                                :disabled="saving || videoGamesDisabled"
+                                :disabled="
+                                    saving || preparing || videoGamesDisabled
+                                "
                                 :name="'maintenance-' + option.id"
                                 @update:model-value="
                                     setSelection(
@@ -137,7 +165,7 @@
                     <cdx-field
                         class="avgp-section"
                         :is-fieldset="true"
-                        :disabled="saving"
+                        :disabled="saving || preparing"
                     >
                         <template #label>{{
                             msg("dialog.otherProjects")
@@ -149,7 +177,7 @@
                                 :model-value="
                                     assessment.otherProjects[option.id]
                                 "
-                                :disabled="saving"
+                                :disabled="saving || preparing"
                                 :name="'otherProject-' + option.id"
                                 @update:model-value="
                                     setSelection(
@@ -179,7 +207,7 @@
                         <cdx-text-area
                             class="avgp-compare-textarea"
                             :model-value="previewText"
-                            :readonly="saving"
+                            :readonly="saving || preparing"
                             rows="8"
                             @update:model-value="onPreviewInput"
                         />
@@ -207,7 +235,7 @@
                         }}</template>
                         <cdx-text-input
                             :model-value="summary"
-                            :readonly="saving"
+                            :readonly="saving || preparing"
                             @update:model-value="onSummaryInput"
                         />
                     </cdx-field>
@@ -216,7 +244,7 @@
 
             <section
                 class="avgp-registration"
-                :aria-busy="saving"
+                :aria-busy="saving || preparing"
                 aria-labelledby="avgp-registration-title"
             >
                 <h2 id="avgp-registration-title" class="avgp-section-title">
@@ -232,17 +260,14 @@
                     v-else
                     class="avgp-registration-choice"
                     :model-value="shouldRegister"
-                    :disabled="saving"
+                    :disabled="saving || preparing"
                     name="registerNewPage"
                     @update:model-value="setRegister"
                 >
                     {{ registrationLabel }}
                 </cdx-checkbox>
 
-                <div
-                    v-if="showRegistrationPreview && shouldRegister"
-                    class="avgp-list-review"
-                >
+                <div v-if="showListReview" class="avgp-list-review">
                     <div class="avgp-section avgp-list-preview">
                         <h3 class="avgp-field-title">
                             {{ msg("dialog.listChanges") }}
@@ -260,12 +285,55 @@
                             msg("dialog.listSummary")
                         }}</template>
                         <cdx-text-input
-                            :model-value="listSummary"
-                            :readonly="saving"
-                            @update:model-value="setListSummary"
+                            :model-value="displayedListSummary"
+                            :readonly="saving || preparing"
+                            @update:model-value="setDisplayedListSummary"
                         />
                     </cdx-field>
                 </div>
+            </section>
+
+            <section
+                v-if="stagedTalkReviews.length"
+                class="avgp-staged-reviews"
+                aria-labelledby="avgp-staged-title"
+            >
+                <h2 id="avgp-staged-title" class="avgp-section-title">
+                    {{ msg("dialog.stagedTalkChanges") }}
+                </h2>
+                <article
+                    v-for="review in stagedTalkReviews"
+                    :key="review.talkTitle"
+                    class="avgp-staged-review"
+                >
+                    <h3 class="avgp-field-title">{{ review.title }}</h3>
+                    <cdx-field class="avgp-section">
+                        <template #label>{{
+                            msg("dialog.readySource")
+                        }}</template>
+                        <pre class="avgp-staged-source">{{
+                            review.previewText
+                        }}</pre>
+                    </cdx-field>
+                    <div class="avgp-section">
+                        <h4 class="avgp-field-title">
+                            {{ msg("dialog.leadDiff") }}
+                        </h4>
+                        <wikitext-comparison
+                            :after-label="msg('dialog.afterSave')"
+                            :before-label="msg('dialog.currentSource')"
+                            :comparison="review.comparison"
+                            :label="msg('dialog.leadDiff')"
+                            :no-changes-label="msg('registration.noChanges')"
+                        />
+                    </div>
+                    <div class="avgp-section">
+                        <h4 class="avgp-field-title">
+                            {{ msg("dialog.talkSummary") }}
+                        </h4>
+                        <p class="avgp-staged-summary">{{ review.summary }}</p>
+                    </div>
+                </article>
             </section>
         </div>
     </cdx-dialog>

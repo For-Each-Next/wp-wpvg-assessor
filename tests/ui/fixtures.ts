@@ -4,15 +4,19 @@ import type { Page } from "@playwright/test";
 interface FixtureOptions {
     alreadyRegistered?: boolean;
     conflict?: boolean;
+    creationDates?: Record<string, string>;
     expired?: boolean;
     failList?: boolean;
     failTalk?: boolean;
+    failTalkTitle?: string;
     holdLoad?: boolean;
     holdTalk?: boolean;
     lead?: string;
     locale?: string;
+    listConflict?: boolean;
     pageTitle?: string;
     wikiId?: string;
+    userName?: string;
 }
 
 interface PostedEdit {
@@ -84,6 +88,23 @@ export async function openAssessor(page: Page, options: FixtureOptions = {}) {
 
 export async function getPosts(page: Page): Promise<PostedEdit[]> {
     return page.evaluate(() => (globalThis as any).__fixture.posts);
+}
+
+export async function navigateAssessor(page: Page, title: string) {
+    await page.goto(`/tests/ui/index.html?page=${encodeURIComponent(title)}`);
+    await page
+        .getByRole("link", { name: "VG Page Assessor", exact: true })
+        .click();
+    await expect(
+        page.getByRole("textbox", {
+            name: "Ready-to-save lead-section source",
+            exact: true,
+        }),
+    ).toBeVisible();
+    return page.getByRole("dialog", {
+        name: `VG Page Assessor (${title.replace(/^Talk:/u, "")})`,
+        exact: true,
+    });
 }
 
 export async function chooseOption(page: Page, label: string, value: string) {

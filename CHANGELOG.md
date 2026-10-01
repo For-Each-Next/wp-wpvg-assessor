@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.1 - 2026-10-01
+
+- Renamed the outside-project importance choice to **Out of scope**.
+- Keep the form open after staging and switch the same button to **Unstage**
+  for a queued page. Unstaging removes only the current draft
+  and retains the edits in the form.
+- Applied the assessment footer button order and hierarchy: quiet destructive
+  Cancel, normal neutral Stage, and primary progressive Submit. Added the
+  required Codex button guidance to the contributor documentation.
+- Added **Stage** to queue reviewed assessments in the background and
+  **Submit (+N)** to review and submit them together. Batched registration
+  uses one fresh list preview and one list edit; unfinished drafts survive
+  partial failures. Reopening reuses page data and restores staged source.
+
 ## 0.1.0 - 2026-10-01
 
 - Preserve banner-shell settings such as `vital=yes`, merge standalone project

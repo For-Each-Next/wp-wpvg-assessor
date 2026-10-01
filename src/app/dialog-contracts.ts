@@ -12,6 +12,7 @@ import type {
 } from "../domain/types.ts";
 import type { Logger } from "../shared/logging.ts";
 import type { ActionNotifier } from "../shared/notifications.ts";
+import type { AssessmentStagingWorkflow } from "./staging-contracts.ts";
 
 export interface DialogState {
     api: mw.Api;
@@ -81,4 +82,5 @@ export interface PageAssessorRuntime extends DialogStateWorkflow {
     logger: Logger;
     notify: ActionNotifier;
     saveReviewedDialog: SaveReviewedDialog;
+    staging?: AssessmentStagingWorkflow;
 }

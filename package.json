@@ -1,7 +1,7 @@
 {
     "name": "wpvg-assessor",
-    "version": "0.1.0",
-    "description": "Assess video game articles and register new pages in MediaWiki.",
+    "version": "0.1.1",
+    "description": "A gadget for WikiProject Video games on Chinese Wikipedia to assess articles and register new pages.",
     "private": true,
     "license": "CC0-1.0",
     "type": "module",

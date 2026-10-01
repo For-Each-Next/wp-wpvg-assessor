@@ -39,6 +39,29 @@ placeholders. Render article source, API text, and messages as text. Preserve
 the exact preview-before-save contract documented in the
 [review workflow](docs/review-workflow.md).
 
+## Button hierarchy and order
+
+**All action groups must follow the [Wikimedia Codex types and order of
+buttons](https://doc.wikimedia.org/codex/latest/style-guide/using-links-and-buttons.html#types-and-order-of-buttons).**
+Use Codex button action and weight props explicitly; see the
+[button guidance](https://doc.wikimedia.org/codex/latest/style-guide/using-links-and-buttons.html#buttons).
+
+The assessment dialog footer must use this sequence in both its visual
+layout and keyboard focus order:
+
+| Action                             | Weight  | Action type | Codex props                             |
+| ---------------------------------- | ------- | ----------- | --------------------------------------- |
+| Cancel                             | Quiet   | Destructive | `weight="quiet" action="destructive"`   |
+| Stage / 暂存 or Unstage / 取消暂存 | Normal  | Neutral     | `weight="normal" action="default"`      |
+| Submit / Submit (+N)               | Primary | Progressive | `weight="primary" action="progressive"` |
+
+Keep the neutral staging action between Cancel and Submit, and use only
+one primary action in the group. Align dialog actions to the inline end
+with Codex `spacing-75` between buttons. Preserve the disabled states during
+preparation and saving, including the ability to cancel preparation.
+Staging and unstaging keep the form open. The same normal neutral button
+toggles between these actions according to whether the current page is queued.
+
 Run `npm run verify` for material changes. Rebuild `dist/` instead of editing
 generated artifacts. Record notable changes in `CHANGELOG.md`; keep technical
 details in `docs/` and preserve upstream licensing notices.
