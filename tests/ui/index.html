@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Offline VG Page Assessor fixture</title>
+        <link rel="icon" href="data:," />
+        <link rel="stylesheet" href="/fixtures/codex.css" />
+        <style>
+            body {
+                margin: 1rem;
+                font: 16px/1.6 sans-serif;
+                color: #202122;
+                background: #fff;
+            }
+            #p-tb {
+                display: flex;
+                gap: 1rem;
+            }
+            /* Fixture styling for the host's mediawiki.diff.styles resource. */
+            table.diff {
+                border-spacing: 4px;
+            }
+            .diff .diff-marker {
+                width: 1.5rem;
+            }
+            .diff .diff-content {
+                width: calc(50% - 1.5rem);
+            }
+            .diff td {
+                vertical-align: top;
+            }
+            td.diff-marker::before {
+                content: attr(data-marker);
+            }
+            .diff .diff-marker {
+                text-align: center;
+                font-weight: bold;
+            }
+            .diff .diff-context,
+            .diff .diff-deletedline,
+            .diff .diff-addedline {
+                border: 1px solid #c8ccd1;
+                border-radius: 2px;
+                padding: 0.5rem;
+            }
+            .diff .diff-context {
+                background: #f8f9fa;
+            }
+            .diff .diff-deletedline {
+                border-color: #fc3;
+                background: #fef6e7;
+            }
+            .diff .diff-addedline {
+                border-color: #a3d3ff;
+                background: #eaf3ff;
+            }
+            .diff del.diffchange,
+            .diff ins.diffchange {
+                font-weight: bold;
+                text-decoration: none;
+            }
+            .diff del.diffchange {
+                background: #ffe49c;
+            }
+            .diff ins.diffchange {
+                background: #a3d3ff;
+            }
+        </style>
+    </head>
+    <body>
+        <main>
+            <h1>Example game</h1>
+            <nav id="p-tb" aria-label="Tools"></nav>
+            <p>The API is an in-memory fixture. No wiki is contacted.</p>
+            <div id="notifications" role="status"></div>
+        </main>
+        <script src="/fixtures/vue.js"></script>
+        <script src="/fixtures/codex.js"></script>
+        <script src="/tests/ui/mediawiki.js"></script>
+        <script src="/dist/wpvg_assessor.min.js"></script>
+    </body>
+</html>

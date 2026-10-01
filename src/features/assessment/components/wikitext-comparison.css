@@ -1,0 +1,67 @@
+.avgp-comparison {
+    border: var(--border-width-base, 1px) solid
+        var(--border-color-muted, #dadde3);
+    border-radius: var(--border-radius-base, 2px);
+    max-inline-size: 100%;
+    overflow-x: auto;
+    padding: var(--spacing-25, 0.25rem);
+}
+
+.avgp-comparison:focus-visible {
+    outline: var(--border-width-thick, 2px) solid var(--color-progressive, #36c);
+    outline-offset: var(--spacing-12, 2px);
+}
+
+.avgp-comparison__table.diff {
+    direction: ltr;
+    margin: 0;
+    min-inline-size: 32rem;
+    table-layout: fixed;
+    width: 100%;
+}
+
+.avgp-comparison__caption {
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+.avgp-comparison__table .diff-otitle,
+.avgp-comparison__table .diff-ntitle {
+    color: var(--color-base, #202122);
+    direction: initial;
+    font-weight: var(--font-weight-bold, 700);
+    padding-block-end: var(--spacing-25, 0.25rem);
+    text-align: center;
+}
+
+.avgp-comparison__table .diff-deletedline > div,
+.avgp-comparison__table .diff-addedline > div,
+.avgp-comparison__table .diff-context > div {
+    direction: ltr;
+    font-family: var(--font-family-monospace, monospace);
+    font-size: var(--font-size-small, 0.875rem);
+    line-height: var(--line-height-medium, 1.6);
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.avgp-comparison__omitted,
+.avgp-comparison__message {
+    color: var(--color-subtle, #54595d);
+    padding: var(--spacing-50, 0.5rem) var(--spacing-75, 0.75rem);
+    text-align: center;
+}
+
+.avgp-comparison__omitted.diff-context {
+    background-color: transparent;
+    border: 0;
+}
+
+.avgp-comparison__message {
+    direction: initial;
+    margin: 0;
+}
