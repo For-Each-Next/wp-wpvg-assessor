@@ -1,6 +1,6 @@
 {
     "name": "wpvg-assessor",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "description": "A gadget for WikiProject Video games on Chinese Wikipedia to assess articles and register new pages.",
     "private": true,
     "license": "CC0-1.0",

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0 - 2026-10-01
+
+- Linked the MediaWiki gadget and userscript installation instructions to
+  GitHub's latest release downloads.
+
 ## 0.1.1 - 2026-10-01
 
 - Renamed the outside-project importance choice to **Out of scope**.

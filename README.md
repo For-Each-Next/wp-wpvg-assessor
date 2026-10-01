@@ -48,9 +48,11 @@ according to your Wikipedia interface language.
 
 ## How to use
 
-Copy the contents of `wpvg_assessor.min.js` into
+Copy the contents of [wpvg_assessor.min.js](https://github.com/For-Each-Next/wp-wpvg-assessor/releases/latest/download/wpvg_assessor.min.js) into
 `Special:MyPage/common.js` on Chinese Wikipedia, or add it as a site gadget.
-Tampermonkey users can install `wpvg_assessor.user.js` instead.
+Tampermonkey users can install [wpvg_assessor.user.js](https://github.com/For-Each-Next/wp-wpvg-assessor/releases/latest/download/wpvg_assessor.user.js) instead.
+
+Both links download the files from the latest GitHub release.
 
 Refresh Wikipedia after installation, open an article or its talk page, and
 choose **VG Page Assessor** from the page tools. Select the assessment, review
