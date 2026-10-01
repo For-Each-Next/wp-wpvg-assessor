@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.2.1 - 2026-10-01
+
+- Fixed talk-page loading when the same date in the new-page list contains
+  a missing page, including `Talk:COCORO`. Skip ordering reads for already
+  registered or ineligible articles, and retain missing list entries with
+  unknown creation dates when preparing a new registration.
+- Added **Batch assess articles (批量评级条目)** on the unassessed Video games
+  category, with a nearly full-screen article preview using wiki and template
+  styles and three compact button groups: article classes, list classes,
+  and Unassessed/Skip. Load only talk-page assessment data, avoiding new-page
+  registration and creation-date requests in category assessment. Preload
+  the next three articles; choosing a class starts a background talk-page
+  save and immediately advances. **Skip** continues without a wiki write.
+  Failed articles return after the remaining category pages with their
+  captured source, summary, and error for explicit retry. Pending saves
+  continue after closing the form; failures remain available on reopening
+  in the same tab until reload.
+
+- Store staged assessments immediately in `localStorage`, sharing the queue
+  across browser tabs for the same wiki and account. Update open dialogs when
+  the queue changes, retain local form edits, and require a fresh batch review
+  after external changes. Serialize queue changes and submission across tabs
+  to prevent duplicate saves or overwritten drafts.
+- Removed draft migration from the older per-tab store. Restore staged drafts
+  exclusively from the shared `localStorage` queue.
+
 ## 0.2.0 - 2026-10-01
 
 - Linked the MediaWiki gadget and userscript installation instructions to

@@ -23,6 +23,8 @@ export interface AssessmentSessionData {
 export interface AssessmentSessionStore {
     read(): AssessmentSessionData;
     write(data: AssessmentSessionData): void;
+    subscribe(listener: () => void): () => void;
+    runExclusive<T>(operation: () => Promise<T>): Promise<T>;
 }
 
 export interface PreparedAssessmentBatch {
@@ -35,8 +37,9 @@ export interface PreparedAssessmentBatch {
 export interface AssessmentStagingWorkflow {
     count(): number;
     getReview(talkTitle: string): DialogSaveReview | null;
-    stage(state: DialogState, review: DialogSaveReview): void;
-    unstage(talkTitle: string): void;
+    stage(state: DialogState, review: DialogSaveReview): Promise<void>;
+    unstage(talkTitle: string): Promise<void>;
+    subscribe(listener: () => void): () => void;
     prepare(
         state: DialogState,
         review: DialogSaveReview,

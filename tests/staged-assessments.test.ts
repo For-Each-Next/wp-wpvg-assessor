@@ -31,11 +31,11 @@ const api = {} as mw.Api;
 const originalList =
     "== 2026年 ==\n* 9月30日 - {{vgc|Earlier game}}\n* 9月29日 - 無新條目\n";
 
-test("staging retains exact reviewed source and replaces the same talk page without writes", () => {
+test("staging retains exact reviewed source and replaces the same talk page without writes", async () => {
     const fixture = createFixture();
     const state = createState("First game");
     const firstReview = createReview("First game");
-    fixture.workflow.stage(state, firstReview);
+    await fixture.workflow.stage(state, firstReview);
     state.assessment.className = "FA";
     firstReview.previewText = "Later unreviewed changes";
     assert.equal(fixture.workflow.count(), 1);
@@ -45,8 +45,8 @@ test("staging retains exact reviewed source and replaces the same talk page with
     );
     const replacement = createReview("First game", false);
     replacement.previewText += "\n<!-- Replacement reviewed verbatim -->";
-    fixture.workflow.stage(createState("First game"), replacement);
-    fixture.workflow.stage(
+    await fixture.workflow.stage(createState("First game"), replacement);
+    await fixture.workflow.stage(
         createState("Second game"),
         createReview("Second game"),
     );
@@ -81,15 +81,15 @@ test("unstaging removes only the requested page, restores its loaded snapshot, a
     first.assessment.className = "B";
     first.previewDirty = true;
     first.summaryDirty = true;
-    fixture.workflow.stage(first, createReview("First game"));
+    await fixture.workflow.stage(first, createReview("First game"));
     const secondReview = createReview("Second game");
-    fixture.workflow.stage(createState("Second game"), secondReview);
+    await fixture.workflow.stage(createState("Second game"), secondReview);
     const prepared = await fixture.workflow.prepare(
         createState("Third game"),
         createReview("Third game"),
     );
 
-    fixture.workflow.unstage(first.talkTitle);
+    await fixture.workflow.unstage(first.talkTitle);
     assert.equal(fixture.workflow.count(), 1);
     assert.equal(fixture.workflow.getReview(first.talkTitle), null);
     assert.deepEqual(
@@ -117,15 +117,15 @@ test("unstaging removes only the requested page, restores its loaded snapshot, a
     assert.equal(reopened.assessment.className, "Start");
     assert.equal(reopened.previewDirty, false);
     assert.equal(reopened.summaryDirty, false);
-    fixture.workflow.unstage(first.talkTitle);
+    await fixture.workflow.unstage(first.talkTitle);
     assert.equal(fixture.workflow.count(), 1);
 
-    fixture.workflow.stage(first, createReview("First game"));
+    await fixture.workflow.stage(first, createReview("First game"));
     const invalidatedSession = fixture.session.read();
     invalidatedSession.newPageList = null;
     invalidatedSession.pages = {};
     fixture.session.write(invalidatedSession);
-    fixture.workflow.unstage(first.talkTitle);
+    await fixture.workflow.unstage(first.talkTitle);
     assert.equal(
         Object.hasOwn(fixture.session.read().pages, first.talkTitle),
         false,
@@ -135,7 +135,7 @@ test("unstaging removes only the requested page, restores its loaded snapshot, a
 test("preparation refetches the list, orders the combined date, and makes no writes before review", async () => {
     const fixture = createFixture();
     const later = createState("Later game", "2026-09-30T18:00:00Z");
-    fixture.workflow.stage(later, createReview("Later game"));
+    await fixture.workflow.stage(later, createReview("Later game"));
     const before = fixture.session.read();
     fixture.setList({
         basetimestamp: "fresh-list-base",
@@ -167,7 +167,7 @@ test("batch submission writes one exact reviewed registration before each exact 
     const fixture = createFixture();
     const firstReview = createReview("First game");
     const secondReview = createReview("Second game");
-    fixture.workflow.stage(createState("First game"), firstReview);
+    await fixture.workflow.stage(createState("First game"), firstReview);
     const batch = await fixture.workflow.prepare(
         createState("Second game"),
         secondReview,
@@ -204,7 +204,7 @@ test("batch submission writes one exact reviewed registration before each exact 
 
 test("a reviewed current page replaces its staged version in the submitted batch", async () => {
     const fixture = createFixture();
-    fixture.workflow.stage(
+    await fixture.workflow.stage(
         createState("First game"),
         createReview("First game"),
     );
@@ -224,14 +224,14 @@ test("a reviewed current page replaces its staged version in the submitted batch
 
 test("unselected registration and manually removed VG banners do not add list entries", async () => {
     const fixture = createFixture();
-    fixture.workflow.stage(
+    await fixture.workflow.stage(
         createState("Unchecked game"),
         createReview("Unchecked game", false),
     );
     const removedReview = createReview("Removed game");
     removedReview.previewText =
         "{{WikiProject Anime and manga}}\n<!-- reviewed removal -->";
-    fixture.workflow.stage(createState("Removed game"), removedReview);
+    await fixture.workflow.stage(createState("Removed game"), removedReview);
     const nonGame = createState("Non-game");
     nonGame.assessment.importance = NOT_VIDEO_GAME_IMPORTANCE;
     const batch = await fixture.workflow.prepare(
@@ -252,7 +252,7 @@ test("a registration conflict is reported once, retains every review, and preven
     const fixture = createFixture();
     const conflict = { code: "editconflict" };
     fixture.failRegistration(conflict);
-    fixture.workflow.stage(
+    await fixture.workflow.stage(
         createState("First game"),
         createReview("First game"),
     );
@@ -277,7 +277,7 @@ test("a registration conflict is reported once, retains every review, and preven
 test("confirmed partial submission keeps unfinished drafts and retries without another list write", async () => {
     const fixture = createFixture();
     fixture.failTalk("Talk:Second game");
-    fixture.workflow.stage(
+    await fixture.workflow.stage(
         createState("First game"),
         createReview("First game"),
     );
@@ -323,7 +323,7 @@ test("confirmed partial submission keeps unfinished drafts and retries without a
 
 test("a queue changed after preparation cannot save stale reviewed text", async () => {
     const fixture = createFixture();
-    fixture.workflow.stage(
+    await fixture.workflow.stage(
         createState("First game"),
         createReview("First game"),
     );
@@ -333,7 +333,7 @@ test("a queue changed after preparation cannot save stale reviewed text", async 
     );
     const changedReview = createReview("First game");
     changedReview.summary = "A newly reviewed summary";
-    fixture.workflow.stage(createState("First game"), changedReview);
+    await fixture.workflow.stage(createState("First game"), changedReview);
     await assert.rejects(
         fixture.workflow.save(api, batch, () => undefined),
         /staged pages changed/u,
@@ -345,10 +345,76 @@ test("a queue changed after preparation cannot save stale reviewed text", async 
     );
 });
 
+test("independent workflows serialize submission and reject the second review of the same queue", async () => {
+    const session = createSession();
+    const first = createFixture(session);
+    const second = createFixture(session);
+    const state = createState("First game");
+    const review = createReview("First game", false);
+    await first.workflow.stage(state, review);
+    const firstBatch = await first.workflow.prepare(state, review);
+    const secondBatch = await second.workflow.prepare(state, review);
+    const paused = first.pauseTalkWrite(state.talkTitle);
+
+    const firstSave = first.workflow.save(api, firstBatch, () => undefined);
+    await paused.started;
+    const secondSave = second.workflow.save(api, secondBatch, () => undefined);
+    const results = Promise.allSettled([firstSave, secondSave]);
+    await Promise.resolve();
+    assert.deepEqual(second.writes, []);
+    paused.resume();
+
+    const outcomes = await results;
+    assert.deepEqual(outcomes[0], { status: "fulfilled", value: "saved" });
+    assert.equal(outcomes[1]?.status, "rejected");
+    if (outcomes[1]?.status === "rejected") {
+        assert.match(String(outcomes[1].reason), /staged pages changed/u);
+    }
+    assert.deepEqual(first.writes, [state.talkTitle]);
+    assert.deepEqual(second.writes, []);
+    assert.equal(second.workflow.count(), 0);
+});
+
+test("a different workflow waits to stage until submission finishes and retains its new queue entry", async () => {
+    const session = createSession();
+    const submitting = createFixture(session);
+    const staging = createFixture(session);
+    const state = createState("First game");
+    const review = createReview("First game", false);
+    await submitting.workflow.stage(state, review);
+    const batch = await submitting.workflow.prepare(state, review);
+    const paused = submitting.pauseTalkWrite(state.talkTitle);
+    const save = submitting.workflow.save(api, batch, () => undefined);
+    await paused.started;
+
+    let staged = false;
+    const newReview = createReview("Second game");
+    const queued = staging.workflow
+        .stage(createState("Second game"), newReview)
+        .then(() => {
+            staged = true;
+        });
+    await Promise.resolve();
+    assert.equal(staged, false);
+    assert.equal(staging.workflow.getReview("Talk:Second game"), null);
+    paused.resume();
+    await Promise.all([save, queued]);
+
+    assert.equal(staged, true);
+    assert.deepEqual(submitting.writes, [state.talkTitle]);
+    assert.deepEqual(staging.writes, []);
+    assert.equal(submitting.workflow.count(), 1);
+    assert.equal(submitting.workflow.getReview(state.talkTitle), null);
+    assert.deepEqual(
+        submitting.workflow.getReview("Talk:Second game"),
+        newReview,
+    );
+});
+
 test("Vue reactive state and the prepared ref save the exact review without locking submission", async () => {
     const fixture = createFixture();
     const state = reactive(createState("First game")) as DialogState;
-    fixture.workflow.stage(state, createReview("First game"));
+    await fixture.workflow.stage(state, createReview("First game"));
     const batch = ref(
         await fixture.workflow.prepare(state, createReview("First game")),
     );
@@ -361,7 +427,7 @@ test("Vue reactive state and the prepared ref save the exact review without lock
         fixture.registrations[0]?.registration.proposedText,
         batch.value.registration?.proposedText,
     );
-    fixture.workflow.stage(
+    await fixture.workflow.stage(
         createState("Second game"),
         createReview("Second game"),
     );
@@ -372,7 +438,7 @@ test("a failed draft capture write happens before wiki edits and releases the su
     const memory = createSession();
     let failNextWrite = false;
     const session: AssessmentSessionStore = {
-        read: () => memory.read(),
+        ...memory,
         write(data) {
             if (failNextWrite) {
                 failNextWrite = false;
@@ -391,7 +457,7 @@ test("a failed draft capture write happens before wiki edits and releases the su
         /Storage full/u,
     );
     assert.deepEqual(fixture.writes, []);
-    fixture.workflow.stage(state, review);
+    await fixture.workflow.stage(state, review);
     const retry = await fixture.workflow.prepare(state, review);
     await fixture.workflow.save(api, retry, () => undefined);
     assert.deepEqual(fixture.writes, ["Talk:First game"]);
@@ -402,6 +468,7 @@ test("cache invalidation tolerates storage failures after confirmed writes", () 
     for (const failedOperation of ["read", "write"]) {
         const loader = createCachedDialogLoader({
             session: {
+                ...createSession(),
                 read() {
                     if (failedOperation === "read")
                         throw new Error("Storage unavailable");
@@ -444,7 +511,7 @@ test("cached reopening restores staged state and never exposes mutable cache cop
     const fixture = createFixture(session);
     const stagedState = createState("First game");
     stagedState.assessment.className = "B";
-    fixture.workflow.stage(stagedState, createReview("First game"));
+    await fixture.workflow.stage(stagedState, createReview("First game"));
     loader.invalidate();
     const nextApi = {} as mw.Api;
     const reopened = await loader.load(nextApi, title);
@@ -501,6 +568,11 @@ function createFixture(session = createSession()) {
     let reads = 0;
     let registrationError: unknown;
     let failingTalk: string | null = null;
+    let pausedTalk: {
+        title: string;
+        markStarted: () => void;
+        resumed: Promise<void>;
+    } | null = null;
     const workflow = createAssessmentStagingWorkflow(
         {
             session,
@@ -536,6 +608,10 @@ function createFixture(session = createSession()) {
                 talkReviews.push({ state, review: structuredClone(review) });
                 if (state.talkTitle === failingTalk)
                     throw new Error("Talk write failed");
+                if (pausedTalk?.title === state.talkTitle) {
+                    pausedTalk.markStarted();
+                    await pausedTalk.resumed;
+                }
                 return "saved";
             },
         },
@@ -558,6 +634,16 @@ function createFixture(session = createSession()) {
         failTalk(title: string | null) {
             failingTalk = title;
         },
+        pauseTalkWrite(title: string) {
+            const started = Promise.withResolvers<void>();
+            const resumed = Promise.withResolvers<void>();
+            pausedTalk = {
+                title,
+                markStarted: started.resolve,
+                resumed: resumed.promise,
+            };
+            return { started: started.promise, resume: resumed.resolve };
+        },
     };
 }
 
@@ -567,10 +653,20 @@ function createSession(): AssessmentSessionStore {
         pages: {},
         newPageList: null,
     };
+    let pending = Promise.resolve();
     return {
         read: () => structuredClone(data),
         write(value) {
             data = structuredClone(value);
+        },
+        subscribe: () => () => {},
+        runExclusive<T>(operation: () => Promise<T>): Promise<T> {
+            const result = pending.then(operation);
+            pending = result.then(
+                () => undefined,
+                () => undefined,
+            );
+            return result;
         },
     };
 }

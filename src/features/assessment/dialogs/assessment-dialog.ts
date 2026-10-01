@@ -98,7 +98,7 @@ interface DialogBindings {
     onOpenChange: (value: boolean) => void;
     onPreviewInput: (value: string) => void;
     onSave: () => Promise<void>;
-    onStage: () => void;
+    onStage: () => Promise<void>;
     onSummaryInput: (value: string) => void;
     open: VueRef<boolean>;
     otherProjectOptions: ReadonlyArray<LabelledAssessmentOption>;
@@ -227,6 +227,9 @@ export function createAssessmentDialogBindings(
     const currentStaged = Vue.ref(restoredReview != null);
     let active = true;
     let reviewRevision = 0;
+    let batchPreparationPending = false;
+    let stagingPending = false;
+    let unsubscribeStaging: (() => void) | undefined;
     let closeTimer: ReturnType<typeof setTimeout> | undefined;
     Vue.onUnmounted(release);
     const status = Vue.ref("");
@@ -251,6 +254,31 @@ export function createAssessmentDialogBindings(
         stagedCount.value = runtime.staging?.count() ?? 0;
         currentStaged.value =
             runtime.staging?.getReview(state.talkTitle) != null;
+    }
+
+    function onStagedQueueChange(): void {
+        if (!active) {
+            return;
+        }
+        try {
+            refreshStagedCount();
+            if (saving.value || stagingPending) {
+                return;
+            }
+            const hadBatchReview =
+                preparedBatch != null || batchPreparationPending;
+            invalidatePreparedBatch();
+            if (batchPreparationPending) {
+                batchPreparationPending = false;
+                preparing.value = false;
+            }
+            if (hadBatchReview) {
+                setStatus(msg("dialog.batchChanged"), false);
+            }
+        } catch (error) {
+            runtime.logger.error("assessment.queue-refresh.failed", { error });
+            setStatus(getErrorMessage(error), true);
+        }
     }
 
     function refreshAssessment(): void {
@@ -299,7 +327,7 @@ export function createAssessmentDialogBindings(
     }
 
     function setClassName(value: unknown): void {
-        if (saving.value || typeof value !== "string") {
+        if (saving.value || preparing.value || typeof value !== "string") {
             return;
         }
         if (classInput.value !== value) {
@@ -318,13 +346,13 @@ export function createAssessmentDialogBindings(
     }
 
     function commitClassName(): void {
-        if (!saving.value) {
+        if (!saving.value && !preparing.value) {
             classInput.value = getClassLabel(assessment.className);
         }
     }
 
     function setImportance(value: unknown): void {
-        if (saving.value || !isAssessmentImportance(value)) {
+        if (saving.value || preparing.value || !isAssessmentImportance(value)) {
             return;
         }
         assessment.importance = value;
@@ -338,6 +366,7 @@ export function createAssessmentDialogBindings(
     ): void {
         if (
             saving.value ||
+            preparing.value ||
             (videoGamesDisabled.value && group !== "otherProjects")
         ) {
             return;
@@ -349,7 +378,7 @@ export function createAssessmentDialogBindings(
     }
 
     function onPreviewInput(value: string): void {
-        if (saving.value) {
+        if (saving.value || preparing.value) {
             return;
         }
         invalidatePreparedBatch();
@@ -377,7 +406,7 @@ export function createAssessmentDialogBindings(
     }
 
     function onSummaryInput(value: string): void {
-        if (saving.value) {
+        if (saving.value || preparing.value) {
             return;
         }
         invalidatePreparedBatch();
@@ -387,7 +416,7 @@ export function createAssessmentDialogBindings(
     }
 
     function setListSummary(value: string): void {
-        if (saving.value) {
+        if (saving.value || preparing.value) {
             return;
         }
         invalidatePreparedBatch();
@@ -395,7 +424,7 @@ export function createAssessmentDialogBindings(
     }
 
     function setDisplayedListSummary(value: string): void {
-        if (saving.value) {
+        if (saving.value || preparing.value) {
             return;
         }
         if (preparedBatch != null) {
@@ -407,7 +436,7 @@ export function createAssessmentDialogBindings(
     }
 
     function setRegister(value: boolean): void {
-        if (saving.value || registrationDisabled.value) {
+        if (saving.value || preparing.value || registrationDisabled.value) {
             return;
         }
         invalidatePreparedBatch();
@@ -432,6 +461,8 @@ export function createAssessmentDialogBindings(
 
     function release(): void {
         active = false;
+        unsubscribeStaging?.();
+        unsubscribeStaging = undefined;
         if (closeTimer != null) {
             clearTimeout(closeTimer);
             closeTimer = undefined;
@@ -467,26 +498,40 @@ export function createAssessmentDialogBindings(
         });
     }
 
-    function onStage(): void {
+    async function onStage(): Promise<void> {
         if (saving.value || preparing.value || !active || !runtime.staging) {
             return;
         }
+        const removing = currentStaged.value;
+        const review = captureReview();
+        stagingPending = true;
+        preparing.value = true;
         try {
-            if (currentStaged.value) {
-                runtime.staging.unstage(state.talkTitle);
-                invalidatePreparedBatch();
-                refreshStagedCount();
-                setStatus("", false);
+            if (removing) {
+                await runtime.staging.unstage(state.talkTitle);
+            } else {
+                await runtime.staging.stage(state, review);
+            }
+            if (!active) {
                 return;
             }
-            runtime.staging.stage(state, captureReview());
             invalidatePreparedBatch();
             refreshStagedCount();
-            runtime.logger.info("assessment.staged");
-            setStatus("", false);
+            if (!removing) {
+                runtime.logger.info("assessment.staged");
+            }
+            setStatus(removing ? "" : msg("dialog.staged"), false);
         } catch (error) {
+            if (!active) {
+                return;
+            }
             runtime.logger.error("assessment.stage.failed", { error });
             setStatus(getErrorMessage(error), true);
+        } finally {
+            stagingPending = false;
+            if (active) {
+                preparing.value = false;
+            }
         }
     }
 
@@ -496,6 +541,7 @@ export function createAssessmentDialogBindings(
             return;
         }
         const revision = reviewRevision;
+        batchPreparationPending = true;
         preparing.value = true;
         setStatus(msg("dialog.preparingBatch"), false);
         try {
@@ -514,7 +560,8 @@ export function createAssessmentDialogBindings(
                 setStatus(getErrorMessage(error), true);
             }
         } finally {
-            if (active) {
+            if (active && revision === reviewRevision) {
+                batchPreparationPending = false;
                 preparing.value = false;
             }
         }
@@ -670,6 +717,8 @@ export function createAssessmentDialogBindings(
                 title: entry.state.subjectTitle,
             }));
     });
+
+    unsubscribeStaging = runtime.staging?.subscribe(onStagedQueueChange);
 
     return {
         assessment,

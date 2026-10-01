@@ -13,7 +13,10 @@ import {
 import { createCreationTimeCacheStore } from "../platform/browser/creation-time-cache.ts";
 import { createAssessmentSessionStore } from "../platform/browser/assessment-session.ts";
 import projectConfig from "../domain/project-config.ts";
-import type { DialogPageContext } from "./dialog-contracts.ts";
+import type {
+    DialogPageContext,
+    SaveReviewedDialog,
+} from "./dialog-contracts.ts";
 import { buildNewPageListSummary, msg } from "../i18n/index.ts";
 import { startPageAssessor } from "../features/assessment/app.ts";
 import { createDialogWorkflow } from "./dialog-state.ts";
@@ -25,6 +28,11 @@ import {
 } from "./staged-assessments.ts";
 import { createLogger, type Logger } from "../shared/logging.ts";
 import { createActionNotifier } from "../platform/mediawiki/notifications.ts";
+import { createCategoryApi } from "../platform/mediawiki/category-api.ts";
+import { createCategoryAssessmentWorkflow } from "./category-assessment.ts";
+import { createAssessmentStateLoader } from "./assessment-state.ts";
+import { createReviewedAssessmentSaveWorkflow } from "./save-assessment.ts";
+import { getArticlePreviewStyles } from "../platform/browser/article-preview-styles.ts";
 
 /** Starts the composed browser gadget. */
 export function start(): void {
@@ -87,6 +95,30 @@ export function start(): void {
         logger: logger.child("workflow.dialog-cache"),
         session,
     });
+    const saveReviewedState: SaveReviewedDialog = async (
+        state,
+        review,
+        reportPhase,
+    ) => {
+        try {
+            return await saveReviewedDialog(state, review, reportPhase);
+        } finally {
+            cache.invalidate();
+        }
+    };
+    const notify = createActionNotifier("wpvg-assessor");
+    const loadAssessmentState = createAssessmentStateLoader(
+        {
+            fetchPageText: adapters.pages.fetchPageText,
+            getSubjectPageTitle,
+            getTalkPageTitle,
+        },
+        projectConfig,
+    );
+    const saveReviewedAssessment = createReviewedAssessmentSaveWorkflow({
+        logger: logger.child("workflow.assessment-save"),
+        saveTalkAssessment,
+    });
     const staging = createAssessmentStagingWorkflow(
         {
             changedBatchMessage: () => msg("dialog.batchChanged"),
@@ -101,17 +133,37 @@ export function start(): void {
     );
 
     startPageAssessor({
+        categoryAssessment: createCategoryAssessmentWorkflow({
+            ...adapters.category,
+            loadAssessmentState,
+            async saveReviewedAssessment(state, review) {
+                try {
+                    return await saveReviewedAssessment(state, review);
+                } finally {
+                    cache.invalidate();
+                }
+            },
+            onSaveFailed(error) {
+                notify({
+                    key: "category-save-failed",
+                    message: msg("batch.saveFailed", {
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                    }),
+                    type: "error",
+                });
+            },
+            resolveTitle: (title) => mw.Title.newFromText(title),
+            logger: logger.child("workflow.category"),
+        }),
         createDialogPageContext,
+        getArticlePreviewStyles,
         loadDialogState: cache.load,
         logger: logger.child("ui"),
-        notify: createActionNotifier("wpvg-assessor"),
-        async saveReviewedDialog(state, review, reportPhase) {
-            try {
-                return await saveReviewedDialog(state, review, reportPhase);
-            } finally {
-                cache.invalidate();
-            }
-        },
+        notify,
+        saveReviewedDialog: saveReviewedState,
         staging: {
             ...staging,
             async save(api, batch, reportPhase) {
@@ -143,6 +195,7 @@ function createMediaWikiAdapters(logger: Logger) {
         assessmentPages: createAssessmentPageApi(
             mediaWikiLogger.child("assessment-page"),
         ),
+        category: createCategoryApi(mediaWikiLogger.child("category")),
         newPageList: createNewPageListApi(
             mediaWikiLogger.child("new-page-list"),
         ),

@@ -3,9 +3,7 @@
  */
 
 import type {
-    Assessment,
     NewPageListSnapshot,
-    PageSnapshot,
     PreparedTalkEdit,
     RegistrationResult,
     SubjectPageInfo,
@@ -13,19 +11,20 @@ import type {
 import type { Logger } from "../shared/logging.ts";
 import type { ActionNotifier } from "../shared/notifications.ts";
 import type { AssessmentStagingWorkflow } from "./staging-contracts.ts";
+import type {
+    CategoryAssessmentWorkflow,
+    CategoryArticleStyles,
+} from "./category-contracts.ts";
+import type {
+    AssessmentSaveReview,
+    AssessmentState,
+} from "./assessment-contracts.ts";
 
-export interface DialogState {
-    api: mw.Api;
-    assessment: Assessment;
+export interface DialogState extends AssessmentState {
     creationTimes: Map<string, Date>;
     newPageList: NewPageListSnapshot;
-    page: PageSnapshot;
-    previewDirty: boolean;
     registration: RegistrationResult;
     subjectInfo: SubjectPageInfo;
-    subjectTitle: string;
-    summaryDirty: boolean;
-    talkTitle: string;
 }
 
 /** Browser context created for one dialog-opening attempt. */
@@ -55,11 +54,9 @@ export interface DialogWorkflow extends DialogStateWorkflow {
     ): Promise<void>;
 }
 
-export interface DialogSaveReview {
+export interface DialogSaveReview extends AssessmentSaveReview {
     listSummary: string;
-    previewText: string;
     shouldRegister: boolean;
-    summary: string;
 }
 
 export type DialogSavePhase = "registration" | "talk-page";
@@ -83,4 +80,6 @@ export interface PageAssessorRuntime extends DialogStateWorkflow {
     notify: ActionNotifier;
     saveReviewedDialog: SaveReviewedDialog;
     staging?: AssessmentStagingWorkflow;
+    categoryAssessment?: CategoryAssessmentWorkflow;
+    getArticlePreviewStyles?(): CategoryArticleStyles;
 }

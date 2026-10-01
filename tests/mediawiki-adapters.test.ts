@@ -321,6 +321,123 @@ test("creation-time diagnostics do not include page titles", async () => {
     assert.match(JSON.stringify(output), /itemCount/u);
 });
 
+test("omits explicitly missing list peers from optional creation-time reads", async () => {
+    const requests: Array<Record<string, unknown>> = [];
+    const missingTitle = "File:阴阳师 (游戏).JPG";
+    const api = createCreationLookupApi(
+        {
+            "COCORO (遊戲)": {
+                title: "COCORO (遊戲)",
+                revisions: [
+                    { slots: { main: { content: "#REDIRECT [[COCORO]]" } } },
+                ],
+            },
+            COCORO: {
+                title: "COCORO",
+                revisions: [{ slots: { main: { content: "Article source" } } }],
+            },
+            [missingTitle]: { ns: 6, title: missingTitle, missing: true },
+        },
+        requests,
+    );
+
+    const dates = await pages.fetchPageCreationTimes(api, [
+        "COCORO (遊戲)",
+        "COCORO",
+        missingTitle,
+    ]);
+
+    assert.equal(dates.has(missingTitle), false);
+    assert.equal(
+        dates.get("COCORO")?.toISOString(),
+        "2026-08-29T00:00:00.000Z",
+    );
+    assert.equal(dates.get("COCORO (遊戲)"), dates.get("COCORO"));
+    assert.deepEqual(
+        requests
+            .filter((request) => request.rvdir === "newer")
+            .map((request) => request.titles),
+        ["COCORO"],
+    );
+});
+
+test("an optional lookup containing only a missing page needs no revision-date query", async () => {
+    const requests: Array<Record<string, unknown>> = [];
+    const api = createCreationLookupApi(
+        { Missing: { title: "Missing", missing: true } },
+        requests,
+    );
+
+    const dates = await pages.fetchPageCreationTimes(api, ["Missing"]);
+
+    assert.equal(dates.size, 0);
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0]?.rvdir, undefined);
+});
+
+test("optional creation-time reads still reject unreadable existing or omitted pages", async () => {
+    const sourcePages = [
+        {
+            title: "Unreadable",
+            revisions: [{ slots: { main: { texthidden: true } } }],
+        },
+        { title: "Unreadable" },
+        null,
+    ];
+
+    for (const sourcePage of sourcePages) {
+        const api = createCreationLookupApi({ Unreadable: sourcePage });
+        await assert.rejects(
+            pages.fetchPageCreationTimes(api, ["Unreadable"]),
+            /omitted readable revision content/u,
+        );
+    }
+});
+
+test("an explicitly missing current subject still stops dialog metadata loading", async () => {
+    const requests: Array<Record<string, unknown>> = [];
+    const api = createCreationLookupApi(
+        { COCORO: { ns: 0, title: "COCORO", missing: true } },
+        requests,
+    );
+
+    await assert.rejects(
+        pages.fetchSubjectPageInfo(api, "COCORO"),
+        /Unable to read the current subject page: COCORO/u,
+    );
+    assert.equal(requests.length, 2);
+    assert.equal(
+        requests.some((request) => request.rvdir === "newer"),
+        false,
+    );
+});
+
+function createCreationLookupApi(
+    sourcePages: Record<string, Record<string, unknown> | null>,
+    requests: Array<Record<string, unknown>> = [],
+): mw.Api {
+    return {
+        async get(params: Record<string, unknown>): Promise<unknown> {
+            requests.push(params);
+            if (params.rvdir === "newer") {
+                return {
+                    query: {
+                        pages: String(params.titles)
+                            .split("|")
+                            .map((title) => ({
+                                title,
+                                revisions: [
+                                    { timestamp: "2026-08-29T00:00:00Z" },
+                                ],
+                            })),
+                    },
+                };
+            }
+            return { query: { pages: [sourcePages[String(params.titles)]] } };
+        },
+    } as unknown as mw.Api;
+}
+
 function createCreationTimeApi(title: string): mw.Api {
     let calls = 0;
     return {

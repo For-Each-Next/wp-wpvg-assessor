@@ -8,6 +8,13 @@ openings. A staged page restores its reviewed source and summaries. When
 moving to another page in the same tab, the shared list snapshot and cached
 creation times are reused.
 
+Registration ordering reads run only when the article needs a new list entry.
+An explicitly missing peer page has no known creation date; its existing list
+entry remains in the proposed source. Missing peer metadata does not prevent
+the assessment form from opening. Unreadable revisions on existing pages
+still stop loading, and the current subject must have readable source and a
+creation date.
+
 ## Assessment and review
 
 Existing banner values initialize the controls. Uncommon class values display
@@ -57,14 +64,19 @@ refreshes the current page.
 
 ## Background drafts and batch submission
 
-**Stage (暂存)** adds the current page's draft and keeps the dialog open
-without a wiki write. The same button becomes **Unstage (取消暂存)** for a
+**Stage (暂存)** immediately adds the current page's draft to the shared queue
+and keeps the dialog open without a wiki write. The same button becomes
+**Unstage (取消暂存)** for a
 queued page. Unstaging removes only that page, discards any prepared batch,
 and keeps the current form edits available. Staging again captures those
 edits as a new draft. The draft captures the exact reviewed lead,
 assessment choices, summaries, and registration selection. Drafts use browser
-session storage per wiki and account, surviving navigation and reloads in
-the same tab. Storage failures keep the dialog open with an error.
+`localStorage` per wiki and account, surviving navigation, reloads, and closing
+tabs. Clicking Submit is not needed to enqueue a staged draft. Any browser
+tab using that wiki and account can submit the queue. Open dialogs update
+their queue counts and Stage/Unstage button when another tab changes the
+queue, keeping the current form edits. Storage failures keep the dialog open
+with an error.
 
 The existing submit action shows **Submit (+N)** for the other queued pages;
 the current page is included once even if it has already been staged. With
@@ -74,6 +86,8 @@ combined comparison and editable list summary together with the other
 pages' reviewed talk leads and summaries. The next submit action writes
 those exact reviewed values. Changing assessment controls, source, summaries,
 or registration selection requires another batch review.
+Changes to the queue in another tab also invalidate a prepared or in-flight
+batch review, requiring a fresh combined preview.
 
 Canceling batch preparation ignores its late results and leaves the queued
 drafts intact. Submission checks that the queued drafts still match the
@@ -83,6 +97,66 @@ page from the queue; a failure retains unfinished pages. Once registration
 has been confirmed, remaining drafts no longer request registration on retry.
 Registration conflicts and uncertain outcomes stop the batch and require a
 fresh review instead of an automatic retry.
+
+Queue changes and batch submission use the same exclusive Web Lock for the
+wiki and account. After acquiring it, submission checks that the queued
+drafts still match the reviewed batch. This prevents a waiting tab from
+submitting a batch already completed elsewhere. Staging during another tab's
+submission waits for that save to finish, then adds the captured draft to the
+remaining queue. Cached page reads stay in session storage and cannot
+overwrite the shared queue. Staged drafts are restored exclusively from the
+shared `localStorage` queue; the separate per-tab cache stores read snapshots.
+
+## Category assessment
+
+On the unassessed Video games category, the page-tool action becomes
+**Batch assess articles (批量评级条目)**. The category interface uses a nearly
+full-screen sandboxed frame to show the rendered article, with one Codex
+action row below it, arranged into three button groups:
+[Stub | Start | D | C | B], [SL | List | CL | BL], [Unassessed | Skip].
+Article source and proposed talk-page source remain text in assessment
+controls and comparisons.
+
+The frame reuses the host wiki's loaded inline CSS and same-origin stylesheet
+links. Its MediaWiki content wrappers also support the article's embedded
+TemplateStyles, which scope their rules under `.mw-parser-output` as described
+in the [TemplateStyles documentation](https://www.mediawiki.org/wiki/Help:TemplateStyles).
+The sandbox permits stylesheet loading while blocking scripts.
+
+The workflow reads category members through API continuation. Main-namespace
+members and talk-namespace members resolve to the same subject/talk target
+pair. It loads article previews and assessment-only state for the current
+article and the next three articles, refilling that window as the user moves
+forward. These category loads read the talk-page lead without fetching the
+new-page registration list or page creation dates. The ordinary article
+assessor continues to load those registration details. Late results from a
+closed interface do not update mounted UI.
+
+Expand **Review proposed talk-page lead** to inspect the proposed source and
+edit its talk-page summary before acting. Choosing a class button applies
+that class, generates the corresponding lead through the ordinary assessment
+rules, and starts saving the captured lead and summary in the background
+through the ordinary safe-save workflow. Other assessment flags and a
+manually entered summary are preserved; new-page registration is disabled.
+The class action immediately advances to the next article without waiting
+for the save or showing a save spinner. The existing talk-page conflict
+handling applies.
+
+A failed or uncertain save queues that article after the remaining category
+pages. When it returns, the interface restores the captured exact source and
+summary and shows the save error. It does not automatically retry a failed
+article; choosing a class again explicitly starts another save. At the end
+of the category, the interface shows the number of pending background saves,
+and failed articles appear as those saves settle.
+
+**Skip** moves to the next article without a wiki write. Category assessment
+does not stage drafts or submit the shared queue. **Cancel** is available
+during reading and loading, ignores late UI loads, and releases the mounted
+interface. Background saves continue after closing. The workflow retains
+failed articles and their captured reviews in memory, making them available
+when the form is reopened in the same tab and gadget runtime; reloading does
+not restore this retry queue. If article loading fails, **Retry** loads the
+current article again.
 
 ## Conflicts and failures
 

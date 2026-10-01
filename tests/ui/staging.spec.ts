@@ -36,6 +36,235 @@ const unstage = (page: Page) =>
     page.getByRole("button", { name: "Unstage", exact: true });
 const assessorLink = (page: Page) =>
     page.getByRole("link", { name: "VG Page Assessor", exact: true });
+const queuedNotice = (page: Page) =>
+    page.getByText("Added to queue. You can submit it from any browser tab.", {
+        exact: true,
+    });
+const changedNotice = (page: Page) =>
+    page.getByText(
+        "Staged pages changed. Review the combined changes again before submitting.",
+        { exact: true },
+    );
+const stagedHeading = (page: Page) =>
+    page.getByRole("heading", {
+        name: "Other staged talk-page changes",
+        exact: true,
+    });
+
+test("Stage immediately queues a reviewed draft for submission from an already-open browser tab", async ({
+    page,
+    context,
+}) => {
+    await openAssessor(page);
+    const submittingTab = await context.newPage();
+    await openAssessor(submittingTab, { pageTitle: "Second game" });
+    const firstReviewed =
+        "  {{WikiProject banner shell|class=B|1=\n{{WikiProject Video games|importance=High}}\n}}\n<!-- exact cross-tab source -->\n\n";
+    await readySource(page).fill(firstReviewed);
+    await talkSummary(page).fill("Reviewed first cross-tab talk");
+    await listSummary(page).fill("Reviewed first cross-tab registration");
+    await chooseOption(submittingTab, "Shared class", "B");
+    const secondReviewed = `${await readySource(submittingTab).inputValue()}\n<!-- current submitting tab source -->\n\n`;
+    await readySource(submittingTab).fill(secondReviewed);
+    await talkSummary(submittingTab).fill("Reviewed second cross-tab talk");
+    await listSummary(submittingTab).fill(
+        "Reviewed second cross-tab registration",
+    );
+
+    await stage(page).click();
+    await expect(queuedNotice(page)).toBeVisible();
+    await expect(submit(submittingTab, 1)).toBeEnabled();
+    await expect(readySource(submittingTab)).toHaveValue(secondReviewed);
+    expect(await getPosts(page)).toEqual([]);
+    expect(await getPosts(submittingTab)).toEqual([]);
+
+    await submit(submittingTab, 1).click();
+    await expect(stagedHeading(submittingTab)).toBeVisible();
+    await expect(
+        submittingTab
+            .locator("pre")
+            .filter({ hasText: "exact cross-tab source" }),
+    ).toHaveText(firstReviewed);
+    await expect(
+        submittingTab.getByText("Reviewed first cross-tab talk", {
+            exact: true,
+        }),
+    ).toBeVisible();
+    const comparison = submittingTab.getByRole("region", {
+        name: "New-page list changes",
+        exact: true,
+    });
+    await expect(comparison).toContainText("Example game");
+    await expect(comparison).toContainText("Second game");
+    expect(await getPosts(submittingTab)).toEqual([]);
+    await listSummary(submittingTab).fill("Reviewed cross-tab combined list");
+    await submit(submittingTab, 1).click();
+    await expect.poll(() => getPosts(submittingTab)).toHaveLength(3);
+    const posts = await getPosts(submittingTab);
+    expect(posts.map((post) => post.title)).toEqual([
+        "WikiProject:电子游戏/新进条目",
+        "Talk:Example game",
+        "Talk:Second game",
+    ]);
+    expect(posts[0].summary).toBe("Reviewed cross-tab combined list");
+    expect(posts[1]).toMatchObject({
+        summary: "Reviewed first cross-tab talk",
+        text: `${firstReviewed}== Discussion ==\nKeep this discussion exactly.\n`,
+    });
+    expect(posts[2]).toMatchObject({
+        summary: "Reviewed second cross-tab talk",
+        text: `${secondReviewed}== Discussion ==\nKeep this discussion exactly.\n`,
+    });
+    await expect(stage(page)).toBeEnabled();
+    await expect(readySource(page)).toHaveValue(firstReviewed);
+    expect(await getPosts(page)).toEqual([]);
+});
+
+test("external Unstage and Stage changes invalidate combined review while retaining the open form", async ({
+    page,
+    context,
+}) => {
+    await openAssessor(page);
+    await stage(page).click();
+    await expect(unstage(page)).toBeEnabled();
+    const reviewingTab = await context.newPage();
+    await openAssessor(reviewingTab, { pageTitle: "Second game" });
+    const localReviewed = `${await readySource(reviewingTab).inputValue()}\n<!-- retained open-tab edits -->\n`;
+    await readySource(reviewingTab).fill(localReviewed);
+    await talkSummary(reviewingTab).fill("Retained open-tab summary");
+    await listSummary(reviewingTab).fill("Retained open-tab registration");
+    await submit(reviewingTab, 1).click();
+    await expect(stagedHeading(reviewingTab)).toBeVisible();
+
+    await unstage(page).click();
+    await expect(changedNotice(reviewingTab)).toBeVisible();
+    await expect(stagedHeading(reviewingTab)).toHaveCount(0);
+    await expect(submit(reviewingTab)).toBeEnabled();
+    await expect(readySource(reviewingTab)).toHaveValue(localReviewed);
+    await expect(talkSummary(reviewingTab)).toHaveValue(
+        "Retained open-tab summary",
+    );
+    await expect(listSummary(reviewingTab)).toHaveValue(
+        "Retained open-tab registration",
+    );
+
+    const replaced = `${await readySource(page).inputValue()}\n<!-- newly queued source -->\n`;
+    await readySource(page).fill(replaced);
+    await stage(page).click();
+    await expect(submit(reviewingTab, 1)).toBeEnabled();
+    await submit(reviewingTab, 1).click();
+    await expect(stagedHeading(reviewingTab)).toBeVisible();
+    await expect(
+        reviewingTab.locator("pre").filter({ hasText: "newly queued source" }),
+    ).toHaveText(replaced);
+    const thirdTab = await context.newPage();
+    await openAssessor(thirdTab, { pageTitle: "Third game" });
+    await stage(thirdTab).click();
+    await expect(changedNotice(reviewingTab)).toBeVisible();
+    await expect(stagedHeading(reviewingTab)).toHaveCount(0);
+    await expect(submit(reviewingTab, 2)).toBeEnabled();
+    await expect(readySource(reviewingTab)).toHaveValue(localReviewed);
+    await expect(talkSummary(reviewingTab)).toHaveValue(
+        "Retained open-tab summary",
+    );
+    expect(await getPosts(page)).toEqual([]);
+    expect(await getPosts(reviewingTab)).toEqual([]);
+    expect(await getPosts(thirdTab)).toEqual([]);
+});
+
+test("concurrent submissions from two browser tabs cannot write the same reviewed batch twice", async ({
+    page,
+    context,
+}) => {
+    await openAssessor(page);
+    await chooseOption(page, "Shared class", "B");
+    await stage(page).click();
+    await expect(unstage(page)).toBeEnabled();
+    const otherTab = await context.newPage();
+    await openAssessor(otherTab);
+    await submit(page).click();
+    await submit(otherTab).click();
+    await expect(
+        page.getByText(
+            "Review the combined changes below, then choose Submit again.",
+            { exact: true },
+        ),
+    ).toBeVisible();
+    await expect(
+        otherTab.getByText(
+            "Review the combined changes below, then choose Submit again.",
+            { exact: true },
+        ),
+    ).toBeVisible();
+    await page.evaluate(() => {
+        const fixture = (globalThis as any).__fixture;
+        const prototype = (globalThis as any).mw.Api.prototype;
+        const originalPost = prototype.postWithToken;
+        const hold = new Promise<void>((resolve) => {
+            fixture.releaseWrite = resolve;
+        });
+        prototype.postWithToken = async function (...args: unknown[]) {
+            fixture.writeWaiting = true;
+            await hold;
+            return originalPost.apply(this, args);
+        };
+    });
+    await submit(page).click();
+    await expect
+        .poll(() =>
+            page.evaluate(() => (globalThis as any).__fixture.writeWaiting),
+        )
+        .toBe(true);
+    await submit(otherTab).click();
+    await expect(submit(page)).toBeDisabled();
+    await expect(submit(otherTab)).toBeDisabled();
+    expect(await getPosts(page)).toEqual([]);
+    expect(await getPosts(otherTab)).toEqual([]);
+    await page.evaluate(() => (globalThis as any).__fixture.releaseWrite());
+    await expect.poll(() => getPosts(page)).toHaveLength(2);
+    await expect(otherTab.getByText(/Submission stopped/u)).toBeVisible();
+    expect((await getPosts(page)).map((post) => post.title)).toEqual([
+        "WikiProject:电子游戏/新进条目",
+        "Talk:Example game",
+    ]);
+    expect(await getPosts(otherTab)).toEqual([]);
+});
+
+test("a draft staged from another tab during submission survives after the running save", async ({
+    page,
+    context,
+}) => {
+    await openAssessor(page, { holdTalk: true });
+    await chooseOption(page, "Shared class", "B");
+    await stage(page).click();
+    await expect(unstage(page)).toBeEnabled();
+    const stagingTab = await context.newPage();
+    await openAssessor(stagingTab, { pageTitle: "Third game" });
+    const retained = `${await readySource(stagingTab).inputValue()}\n<!-- queued while saving -->\n`;
+    await readySource(stagingTab).fill(retained);
+    await talkSummary(stagingTab).fill("Queued while another tab saves");
+    await submit(page).click();
+    await submit(page).click();
+    await expect.poll(() => getPosts(page)).toHaveLength(2);
+    await stage(stagingTab).click();
+    await expect(stage(stagingTab)).toBeDisabled();
+    await expect(submit(stagingTab, 1)).toBeDisabled();
+    expect(await getPosts(stagingTab)).toEqual([]);
+    await page.evaluate(() => (globalThis as any).__fixture.releaseTalk());
+    await expect(queuedNotice(stagingTab)).toBeVisible();
+    await expect(unstage(stagingTab)).toBeEnabled();
+    await expect(readySource(stagingTab)).toHaveValue(retained);
+    await navigateAssessor(stagingTab, "Third game");
+    await expect(unstage(stagingTab)).toBeEnabled();
+    await expect(readySource(stagingTab)).toHaveValue(retained);
+    await expect(talkSummary(stagingTab)).toHaveValue(
+        "Queued while another tab saves",
+    );
+    await navigateAssessor(stagingTab, "Fourth game");
+    await expect(submit(stagingTab, 1)).toBeEnabled();
+    expect(await getPosts(page)).toHaveLength(2);
+    expect(await getPosts(stagingTab)).toEqual([]);
+});
 
 test("Stage keeps the form open and retains manual review across reopening and navigation without duplicate queued pages or reads", async ({
     page,
@@ -137,11 +366,13 @@ test("Unstage removes only the current draft, keeps its open edits, and updates 
     await readySource(page).fill(firstReviewed);
     await talkSummary(page).fill("First manual staged summary");
     await stage(page).click();
+    await expect(unstage(page)).toBeEnabled();
     await navigateAssessor(page, "Second game");
     await chooseOption(page, "Shared class", "B");
     const secondReviewed = `${await readySource(page).inputValue()}\n<!-- second retained staged source -->\n`;
     await readySource(page).fill(secondReviewed);
     await stage(page).click();
+    await expect(unstage(page)).toBeEnabled();
 
     const dialog = await navigateAssessor(page, "First game");
     const footer = dialog.locator(".cdx-dialog__footer");
@@ -223,6 +454,7 @@ test("Submit (+1) reviews the fresh combined list and then makes one list edit b
     await talkSummary(page).fill("Reviewed first talk");
     await listSummary(page).fill("Reviewed first registration");
     await stage(page).click();
+    await expect(unstage(page)).toBeEnabled();
     await navigateAssessor(page, "Second game");
     await chooseOption(page, "Shared class", "B");
     const secondReviewed = `${await readySource(page).inputValue()}\n<!-- second manual lead -->\n\n`;
@@ -294,10 +526,13 @@ test("the primary Submit counter includes all three other staged pages", async (
 }) => {
     await openAssessor(page, { pageTitle: "First game" });
     await stage(page).click();
+    await expect(unstage(page)).toBeEnabled();
     await navigateAssessor(page, "Second game");
     await stage(page).click();
+    await expect(unstage(page)).toBeEnabled();
     await navigateAssessor(page, "Third game");
     await stage(page).click();
+    await expect(unstage(page)).toBeEnabled();
     await navigateAssessor(page, "Fourth game");
     await expect(submit(page, 3)).toBeVisible();
     await expect(page.getByRole("tab")).toHaveCount(0);
@@ -311,6 +546,7 @@ test("a combined registration conflict makes one failed list attempt and preserv
     await chooseOption(page, "Shared class", "B");
     const firstReviewed = await readySource(page).inputValue();
     await stage(page).click();
+    await expect(unstage(page)).toBeEnabled();
     await navigateAssessor(page, "Second game");
     await chooseOption(page, "Shared class", "B");
     const secondReviewed = await readySource(page).inputValue();
@@ -339,6 +575,7 @@ test("a partial batch save retries only its unfinished talk page after the confi
     await openAssessor(page);
     await chooseOption(page, "Shared class", "B");
     await stage(page).click();
+    await expect(unstage(page)).toBeEnabled();
     await navigateAssessor(page, "Second game");
     await chooseOption(page, "Shared class", "B");
     const reviewed = await readySource(page).inputValue();

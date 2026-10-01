@@ -46,6 +46,7 @@
         failTalkTitle: options.failTalkTitle ?? null,
         listText:
             persisted.listText ??
+            options.listText ??
             [
                 "== 2026年 ==",
                 options.alreadyRegistered
@@ -68,6 +69,12 @@
     persistPages();
     globalThis.__fixture = fixture;
     document.documentElement.lang = options.locale ?? "en";
+    if (options.articleCss != null) {
+        const style = document.createElement("style");
+        style.setAttribute("data-mw-deduplicate", "fixture.article.styles");
+        style.textContent = options.articleCss;
+        document.head.append(style);
+    }
     const loadHold = options.holdLoad
         ? new Promise((resolve) => {
               fixture.releaseLoad = resolve;
@@ -78,6 +85,32 @@
               fixture.releaseTalk = resolve;
           })
         : Promise.resolve();
+    const articleHold = options.holdArticle
+        ? new Promise((resolve) => {
+              fixture.releaseArticle = resolve;
+          })
+        : Promise.resolve();
+
+    function escapeHtml(text) {
+        return String(text)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;");
+    }
+
+    function namespaceForTitle(title) {
+        if (title.startsWith("Talk:")) return 1;
+        if (title.startsWith("File:")) return 6;
+        if (/^(?:Category|分类|分類):/u.test(title)) return 14;
+        return 0;
+    }
+
+    function missingPage(title) {
+        return options.missingTitles?.includes(title)
+            ? { title, ns: namespaceForTitle(title), missing: true }
+            : null;
+    }
 
     function revisionPage(title, content, namespace = 0) {
         return {
@@ -106,32 +139,96 @@
                 await new Promise((resolve) =>
                     setTimeout(resolve, options.delay),
                 );
+            if (params.action === "parse") {
+                await articleHold;
+                const title = String(params.page);
+                return {
+                    parse: {
+                        title,
+                        pageid: 1,
+                        text:
+                            options.articleHtml?.[title] ??
+                            `<h1>${escapeHtml(title)}</h1><p>Article preview for ${escapeHtml(title)}</p>`,
+                    },
+                };
+            }
             if (params.action !== "query") {
                 throw new Error(
                     `Unexpected offline API action: ${params.action}`,
                 );
             }
+            if (params.list === "categorymembers") {
+                if (options.categoryError)
+                    throw new Error("Category temporarily unavailable");
+                const members = options.categoryMembers ?? [
+                    "Talk:First game",
+                    "Talk:Second game",
+                    "Talk:Third game",
+                    "Talk:Fourth game",
+                    "Talk:Fifth game",
+                ];
+                const offset = Number(params.cmcontinue ?? 0);
+                const count = options.categoryPageSize ?? members.length;
+                const next = offset + count;
+                return {
+                    ...(next < members.length
+                        ? {
+                              continue: {
+                                  cmcontinue: String(next),
+                                  continue: "-||",
+                              },
+                          }
+                        : {}),
+                    query: {
+                        categorymembers: members
+                            .slice(offset, next)
+                            .map((title, index) => ({
+                                pageid: offset + index + 1,
+                                ns: namespaceForTitle(title),
+                                title,
+                            })),
+                    },
+                };
+            }
             const titles = String(params.titles ?? "").split("|");
+            if (
+                options.unavailableRegistrationList &&
+                titles.includes(listTitle)
+            ) {
+                throw new Error("The registration fixture is unavailable");
+            }
             if (params.prop === "info") {
                 return {
-                    query: { pages: titles.map((title) => ({ title, ns: 0 })) },
+                    query: {
+                        pages: titles.map(
+                            (title) =>
+                                missingPage(title) ?? {
+                                    title,
+                                    ns: namespaceForTitle(title),
+                                },
+                        ),
+                    },
                 };
             }
             if (params.rvdir === "newer") {
                 return {
                     query: {
-                        pages: titles.map((title) => ({
-                            title,
-                            revisions: [
-                                {
-                                    timestamp:
-                                        title === "Earlier game"
-                                            ? "2026-09-30T01:00:00Z"
-                                            : (options.creationDates?.[title] ??
-                                              creationDate),
+                        pages: titles.map(
+                            (title) =>
+                                missingPage(title) ?? {
+                                    title,
+                                    revisions: [
+                                        {
+                                            timestamp:
+                                                title === "Earlier game"
+                                                    ? "2026-09-30T01:00:00Z"
+                                                    : (options.creationDates?.[
+                                                          title
+                                                      ] ?? creationDate),
+                                        },
+                                    ],
                                 },
-                            ],
-                        })),
+                        ),
                     },
                 };
             }
@@ -140,6 +237,8 @@
                     curtimestamp: timestamp,
                     query: {
                         pages: titles.map((title) => {
+                            const missing = missingPage(title);
+                            if (missing != null) return missing;
                             if (title.startsWith("Talk:")) {
                                 talkPages[title] ??= `${lead}\n\n${body}`;
                                 return revisionPage(title, talkPages[title], 1);
@@ -204,9 +303,10 @@
             this.namespace = namespace;
         }
         static newFromText(text) {
-            return text.startsWith("Talk:")
-                ? new Title(text.slice(5), 1)
-                : new Title(text, 0);
+            const namespace = namespaceForTitle(text);
+            return namespace === 0
+                ? new Title(text, 0)
+                : new Title(text.slice(text.indexOf(":") + 1), namespace);
         }
         getNamespaceId() {
             return this.namespace;
@@ -215,14 +315,16 @@
             return this.text;
         }
         getPrefixedText() {
-            return this.namespace === 1 ? `Talk:${this.text}` : this.text;
+            if (this.namespace === 1) return `Talk:${this.text}`;
+            if (this.namespace === 14) return `Category:${this.text}`;
+            return this.text;
         }
     }
 
     const values = {
         wgDBname: options.wikiId ?? "zhwiki",
         wgWikiID: options.wikiId ?? "zhwiki",
-        wgNamespaceNumber: pageTitle.startsWith("Talk:") ? 1 : 0,
+        wgNamespaceNumber: namespaceForTitle(pageTitle),
         wgPageName: pageTitle,
         wgUserLanguage: options.locale ?? "en",
         wgUserName: options.userName ?? "Fixture editor",

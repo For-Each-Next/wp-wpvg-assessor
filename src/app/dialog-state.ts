@@ -111,6 +111,22 @@ async function prepareRegistrationState(
 ): Promise<PreparedRegistrationState> {
     const newPageList = pages.newPageList;
     const title = subjectInfo.listedTitle || subjectTitle;
+    const registrationOptions = {
+        creationDate: subjectInfo.creationDate,
+        includeDykIcon: hasDykInviteAtTop(pages.talkPage.text),
+        namespaceNumber: subjectInfo.namespaceNumber,
+        text: newPageList.text,
+        title,
+    };
+    const registration = prepareNewPageListRegistration(registrationOptions);
+
+    if (!registration.changed) {
+        return {
+            creationTimes: new Map([[title, subjectInfo.creationDate]]),
+            registration,
+        };
+    }
+
     const titles = [
         ...getTitlesForDate(newPageList.text, subjectInfo.creationDate),
         title,
@@ -118,15 +134,13 @@ async function prepareRegistrationState(
     const creationTimes = await adapters.fetchPageCreationTimes(api, titles);
 
     creationTimes.set(title, subjectInfo.creationDate);
-    const registration = prepareNewPageListRegistration({
-        creationDate: subjectInfo.creationDate,
+    return {
         creationTimes,
-        includeDykIcon: hasDykInviteAtTop(pages.talkPage.text),
-        namespaceNumber: subjectInfo.namespaceNumber,
-        text: newPageList.text,
-        title,
-    });
-    return { creationTimes, registration };
+        registration: prepareNewPageListRegistration({
+            ...registrationOptions,
+            creationTimes,
+        }),
+    };
 }
 
 function getRegistrationSave(state: DialogState): RegistrationSave | null {

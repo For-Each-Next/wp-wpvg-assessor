@@ -8,7 +8,7 @@ import type {
 import { createAssessmentSessionStore } from "../src/platform/browser/assessment-session.ts";
 import { createLogger } from "../src/shared/logging.ts";
 
-test("session drafts and cached snapshots survive reopening with Dates and Maps", (t) => {
+test("shared drafts and tab snapshots survive reopening with Dates and Maps", (t) => {
     const storage = useStorage(t);
     const data = sessionData();
     Object.assign(data.drafts[0].state, { api: { secret: "runtime-api" } });
@@ -28,7 +28,10 @@ test("session drafts and cached snapshots survive reopening with Dates and Maps"
         restored.drafts[0].state.registration.existing?.date instanceof Date,
     );
     assert.equal(
-        JSON.stringify([...storage.values]).includes("runtime-api"),
+        JSON.stringify([
+            ...storage.cache.values,
+            ...storage.queue.values,
+        ]).includes("runtime-api"),
         false,
     );
 });
@@ -66,15 +69,16 @@ test("different wiki and account identities have isolated sessions", (t) => {
         createAssessmentSessionStore(logger(), "wiki-b:User").read(),
         emptySession(),
     );
-    assert.equal(storage.values.size, 1);
+    assert.equal(storage.cache.values.size, 1);
+    assert.equal(storage.queue.values.size, 1);
 });
 
-test("malformed storage returns empty data, preserves its source, and logs no text", (t) => {
+test("malformed queues preserve source and logs; cache writes cannot erase them", (t) => {
     const storage = useStorage(t);
     const events: unknown[][] = [];
     const store = createAssessmentSessionStore(logger(events), "malformed");
     store.write(sessionData());
-    const [key, source] = [...storage.values][0];
+    const [key, source] = [...storage.queue.values][0];
     const corruptions: Array<(value: any) => void> = [
         (value) => {
             value.version = 1;
@@ -86,9 +90,6 @@ test("malformed storage returns empty data, preserves its source, and logs no te
             value.drafts[0].review.previewText = value.textPool.length;
         },
         (value) => {
-            value.pages.Example.page.text = -1;
-        },
-        (value) => {
             value.drafts[0].state.registration.proposedText = 0.5;
         },
         (value) => {
@@ -98,16 +99,7 @@ test("malformed storage returns empty data, preserves its source, and logs no te
             value.drafts[0].state.registration.existing.date = "2026-04-07";
         },
         (value) => {
-            value.pages.Example.subjectInfo.creationDate = null;
-        },
-        (value) => {
             value.drafts[0].review.shouldRegister = "secret editable text";
-        },
-        (value) => {
-            value.pages.Example.assessment.maintenance.cover = "false";
-        },
-        (value) => {
-            value.newPageList = { text: "secret editable text" };
         },
     ];
     const sources = corruptions.map((corrupt) => {
@@ -117,9 +109,12 @@ test("malformed storage returns empty data, preserves its source, and logs no te
     });
     sources.push("secret editable text", "null", "[]");
     for (const corrupted of sources) {
-        storage.values.set(key, corrupted);
-        assert.deepEqual(store.read(), emptySession());
-        assert.equal(storage.values.get(key), corrupted);
+        storage.queue.values.set(key, corrupted);
+        const cached = store.read();
+        assert.deepEqual(cached.drafts, []);
+        assert.deepEqual(cached.pages, sessionData().pages);
+        store.write(cached);
+        assert.equal(storage.queue.values.get(key), corrupted);
     }
     assert.equal(
         events.filter(([event]) => String(event).includes("read.invalid"))
@@ -130,6 +125,38 @@ test("malformed storage returns empty data, preserves its source, and logs no te
         JSON.stringify(events).includes("secret editable text"),
         false,
     );
+});
+
+test("malformed tab caches do not hide shared drafts or overwrite recovery source", (t) => {
+    const storage = useStorage(t);
+    const store = createAssessmentSessionStore(logger(), "malformed-cache");
+    store.write(sessionData());
+    const [key, source] = [...storage.cache.values][0];
+    const corruptions: Array<(value: any) => void> = [
+        (value) => {
+            value.pages.Example.page.text = -1;
+        },
+        (value) => {
+            value.pages.Example.subjectInfo.creationDate = null;
+        },
+        (value) => {
+            value.pages.Example.assessment.maintenance.cover = "false";
+        },
+        (value) => {
+            value.newPageList = { text: "secret editable text" };
+        },
+    ];
+    for (const corrupt of corruptions) {
+        const encoded: unknown = JSON.parse(source);
+        corrupt(encoded);
+        const corrupted = JSON.stringify(encoded);
+        storage.cache.values.set(key, corrupted);
+        const restored = store.read();
+        assert.deepEqual(restored.drafts, sessionData().drafts);
+        assert.deepEqual(restored.pages, {});
+        assert.equal(restored.newPageList, null);
+        assert.equal(storage.cache.values.get(key), corrupted);
+    }
 });
 
 test("large shared source snapshots are pooled once while exact proposals survive", (t) => {
@@ -149,13 +176,21 @@ test("large shared source snapshots are pooled once while exact proposals surviv
     const store = createAssessmentSessionStore(logger(), "pooled-source");
     store.write(data);
 
-    const source = [...storage.values.values()][0];
-    const encoded = JSON.parse(source) as { textPool: string[] };
-    assert.equal(
-        encoded.textPool.filter((text) => text === registry).length,
-        1,
+    const sources = [
+        ...storage.cache.values.values(),
+        ...storage.queue.values.values(),
+    ];
+    for (const source of sources) {
+        const encoded = JSON.parse(source) as { textPool: string[] };
+        assert.equal(
+            encoded.textPool.filter((text) => text === registry).length,
+            1,
+        );
+    }
+    assert.ok(
+        sources.reduce((length, source) => length + source.length, 0) <
+            JSON.stringify(data).length * 0.6,
     );
-    assert.ok(source.length < JSON.stringify(data).length / 2);
     assert.deepEqual(store.read(), data);
     assert.equal(
         store.read().drafts[11].state.registration.proposedText,
@@ -178,10 +213,7 @@ test("storage access and read failures propagate without silently replacing draf
         () => store.read(),
         (error) => error === failure,
     );
-    assert.throws(
-        () => store.write(sessionData()),
-        (error) => error === failure,
-    );
+    assert.doesNotThrow(() => store.write(sessionData()));
 
     Object.defineProperty(globalThis, "sessionStorage", {
         configurable: true,
@@ -196,6 +228,24 @@ test("storage access and read failures propagate without silently replacing draf
         () => store.read(),
         (error) => error === failure,
     );
+    Object.defineProperty(globalThis, "sessionStorage", {
+        configurable: true,
+        value: memoryStorage(),
+    });
+    Object.defineProperty(globalThis, "localStorage", {
+        configurable: true,
+        get() {
+            throw failure;
+        },
+    });
+    assert.throws(
+        () => store.read(),
+        (error) => error === failure,
+    );
+    assert.throws(
+        () => store.write(sessionData()),
+        (error) => error === failure,
+    );
     assert.equal(
         JSON.stringify(events).includes("secret editable text"),
         false,
@@ -208,7 +258,8 @@ test("write failures leave the last saved batch intact and propagate to the call
     const store = createAssessmentSessionStore(logger(events), "write-failure");
     store.write(sessionData());
     const failure = new Error("secret editable text");
-    storage.setItem = () => {
+    const savedCache = [...storage.cache.values];
+    storage.queue.setItem = () => {
         throw failure;
     };
     const changed = sessionData();
@@ -218,6 +269,7 @@ test("write failures leave the last saved batch intact and propagate to the call
         (error) => error === failure,
     );
     assert.deepEqual(store.read(), sessionData());
+    assert.deepEqual([...storage.cache.values], savedCache);
 
     const invalid = sessionData();
     invalid.drafts[0].state.subjectInfo.creationDate = new Date(NaN);
@@ -245,24 +297,211 @@ test("missing sessionStorage uses isolated memory snapshots with independent rea
     );
 });
 
+test("tabs share drafts while keeping distinct caches and ignoring stale cache writes", (t) => {
+    const storage = useStorage(t);
+    const first = createAssessmentSessionStore(logger(), "shared-tabs");
+    first.write(sessionData());
+    const stale = first.read();
+
+    const otherCache = memoryStorage();
+    replaceGlobal(t, "sessionStorage", otherCache);
+    const other = createAssessmentSessionStore(logger(), "shared-tabs");
+    const otherData = other.read();
+    assert.deepEqual(otherData.drafts, sessionData().drafts);
+    assert.deepEqual(otherData.pages, {});
+    assert.equal(otherData.newPageList, null);
+    const secondDraft = sessionData().drafts[0];
+    secondDraft.state.talkTitle = "Talk:Second";
+    otherData.drafts.push(secondDraft);
+    otherData.pages.Second = secondDraft.state;
+    other.write(otherData);
+
+    Object.defineProperty(globalThis, "sessionStorage", {
+        configurable: true,
+        value: storage.cache,
+    });
+    stale.pages.Example.page.text = "Refreshed only in first tab";
+    first.write(stale);
+    assert.equal(first.read().drafts.length, 2);
+    assert.equal(
+        first.read().pages.Example.page.text,
+        "Refreshed only in first tab",
+    );
+    Object.defineProperty(globalThis, "sessionStorage", {
+        configurable: true,
+        value: otherCache,
+    });
+    assert.deepEqual(Object.keys(other.read().pages), ["Second"]);
+    assert.equal(other.read().drafts.length, 2);
+    for (const cache of [storage.cache, otherCache]) {
+        const encoded = JSON.parse([...cache.values.values()][0]) as {
+            drafts: unknown[];
+        };
+        assert.deepEqual(encoded.drafts, []);
+    }
+});
+
+test("failed cache writes keep committed queue data and expose no editable text", (t) => {
+    const storage = useStorage(t);
+    const events: unknown[][] = [];
+    const store = createAssessmentSessionStore(logger(events), "cache-failure");
+    storage.cache.setItem = () => {
+        throw new Error("secret editable text");
+    };
+    assert.doesNotThrow(() => store.write(sessionData()));
+    assert.deepEqual(store.read().drafts, sessionData().drafts);
+    assert.deepEqual(store.read().pages, {});
+    assert.equal(
+        JSON.stringify(events).includes("secret editable text"),
+        false,
+    );
+});
+
+test("exclusive queue work is ordered across stores and continues after failures", async (t) => {
+    useStorage(t);
+    const first = createAssessmentSessionStore(logger(), "exclusive");
+    const second = createAssessmentSessionStore(logger(), "exclusive");
+    const events: string[] = [];
+    let finishFirst!: () => void;
+    const pending = new Promise<void>((resolve) => {
+        finishFirst = resolve;
+    });
+    const failure = new Error("First operation failed");
+    const firstTask = first.runExclusive!(async () => {
+        events.push("first started");
+        await pending;
+        events.push("first ended");
+        throw failure;
+    });
+    const secondTask = second.runExclusive!(async () => {
+        events.push("second started");
+        const data = second.read();
+        data.drafts.push(sessionData().drafts[0]);
+        second.write(data);
+        return "finished";
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.deepEqual(events, ["first started"]);
+    finishFirst();
+    await assert.rejects(firstTask, (error) => error === failure);
+    assert.equal(await secondTask, "finished");
+    assert.deepEqual(events, [
+        "first started",
+        "first ended",
+        "second started",
+    ]);
+    assert.equal(first.read().drafts.length, 1);
+});
+
+test("browser queue work uses one named Web Lock and fails safely without it", async (t) => {
+    useStorage(t);
+    const names: string[] = [];
+    replaceGlobal(t, "window", {});
+    replaceGlobal(t, "navigator", {
+        locks: {
+            async request(name: string, operation: () => Promise<unknown>) {
+                names.push(name);
+                return operation();
+            },
+        },
+    });
+    const first = createAssessmentSessionStore(logger(), "browser-lock");
+    const second = createAssessmentSessionStore(logger(), "browser-lock");
+    await first.runExclusive!(async () => {});
+    await second.runExclusive!(async () => {});
+    assert.equal(names.length, 2);
+    assert.equal(names[0], names[1]);
+    Object.defineProperty(globalThis, "navigator", {
+        configurable: true,
+        value: {},
+    });
+    let executed = false;
+    await assert.rejects(
+        first.runExclusive!(async () => {
+            executed = true;
+        }),
+        /Web Locks/,
+    );
+    assert.equal(executed, false);
+});
+
+test("queue subscriptions filter storage events and unsubscribe releases listeners", (t) => {
+    const storage = useStorage(t);
+    const target = new EventTarget();
+    replaceGlobal(t, "addEventListener", target.addEventListener.bind(target));
+    replaceGlobal(
+        t,
+        "removeEventListener",
+        target.removeEventListener.bind(target),
+    );
+    const store = createAssessmentSessionStore(logger(), "subscriptions");
+    store.write(sessionData());
+    const queueKey = [...storage.queue.values.keys()][0];
+    let changes = 0;
+    const unsubscribe = store.subscribe!(() => {
+        changes += 1;
+    });
+    function notify(key: string | null, storageArea = storage.queue) {
+        target.dispatchEvent(
+            Object.assign(new Event("storage"), { key, storageArea }),
+        );
+    }
+    notify("another wiki queue");
+    notify(queueKey, storage.cache);
+    assert.equal(changes, 0);
+    notify(queueKey);
+    notify(null);
+    assert.equal(changes, 2);
+    unsubscribe();
+    notify(queueKey);
+    assert.equal(changes, 2);
+});
+
+test("old tab sessions are ignored across reads, locked operations and cache writes", async (t) => {
+    const storage = useStorage(t);
+    const fixtureStore = createAssessmentSessionStore(logger(), "fixture");
+    fixtureStore.write(sessionData());
+    const [fixtureQueueKey, oldSource] = [...storage.queue.values][0];
+    storage.queue.values.delete(fixtureQueueKey);
+    storage.cache.values.clear();
+    const oldKey = "wpvg-assessor.assessment-session.v2:old-tab";
+    storage.cache.values.set(oldKey, oldSource);
+
+    const store = createAssessmentSessionStore(logger(), "old-tab");
+    assert.deepEqual(store.read(), emptySession());
+    await store.runExclusive!(async () => {
+        const data = store.read();
+        data.pages = sessionData().pages;
+        store.write(data);
+    });
+    assert.deepEqual(store.read().drafts, []);
+    assert.equal(storage.queue.values.size, 0);
+    assert.equal(storage.cache.values.get(oldKey), oldSource);
+    const currentKey = "wpvg-assessor.assessment-cache.v1:old-tab";
+    const current = JSON.parse(storage.cache.values.get(currentKey)!) as {
+        drafts: unknown[];
+    };
+    assert.deepEqual(current.drafts, []);
+});
+
 function useStorage(
     t: TestContext,
     supplied: ReturnType<typeof memoryStorage> | null = memoryStorage(),
 ) {
-    const descriptor = Object.getOwnPropertyDescriptor(
-        globalThis,
-        "sessionStorage",
-    );
-    Object.defineProperty(globalThis, "sessionStorage", {
-        configurable: true,
-        value: supplied ?? undefined,
-    });
+    const queue = supplied === null ? null : memoryStorage();
+    replaceGlobal(t, "sessionStorage", supplied ?? undefined);
+    replaceGlobal(t, "localStorage", queue ?? undefined);
+    return { cache: supplied!, queue: queue! };
+}
+
+function replaceGlobal(t: TestContext, key: string, value: unknown) {
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, key);
+    Object.defineProperty(globalThis, key, { configurable: true, value });
     t.after(() => {
-        if (descriptor)
-            Object.defineProperty(globalThis, "sessionStorage", descriptor);
-        else Reflect.deleteProperty(globalThis, "sessionStorage");
+        if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+        else Reflect.deleteProperty(globalThis, key);
     });
-    return supplied!;
 }
 
 function memoryStorage() {

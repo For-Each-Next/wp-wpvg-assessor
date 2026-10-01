@@ -3,6 +3,11 @@ import type { Page } from "@playwright/test";
 
 interface FixtureOptions {
     alreadyRegistered?: boolean;
+    articleCss?: string;
+    articleHtml?: Record<string, string>;
+    categoryError?: boolean;
+    categoryMembers?: string[];
+    categoryPageSize?: number;
     conflict?: boolean;
     creationDates?: Record<string, string>;
     expired?: boolean;
@@ -10,13 +15,17 @@ interface FixtureOptions {
     failTalk?: boolean;
     failTalkTitle?: string;
     holdLoad?: boolean;
+    holdArticle?: boolean;
     holdTalk?: boolean;
     lead?: string;
     locale?: string;
     listConflict?: boolean;
+    listText?: string;
+    missingTitles?: string[];
     pageTitle?: string;
     wikiId?: string;
     userName?: string;
+    unavailableRegistrationList?: boolean;
 }
 
 interface PostedEdit {
@@ -61,6 +70,29 @@ export const test = base.extend({
 });
 
 export { expect };
+
+export async function openCategoryAssessor(
+    page: Page,
+    options: FixtureOptions = {},
+) {
+    await page.addInitScript(
+        (fixtureOptions) => {
+            (globalThis as any).__fixtureOptions = fixtureOptions;
+        },
+        {
+            pageTitle: "Category:未评级电子游戏条目",
+            ...options,
+        },
+    );
+    await page.goto("/tests/ui/index.html");
+    await page
+        .getByRole("link", { name: "Batch assess articles", exact: true })
+        .click();
+    return page.getByRole("dialog", {
+        name: "Batch assess articles",
+        exact: true,
+    });
+}
 
 export async function openAssessor(page: Page, options: FixtureOptions = {}) {
     await page.addInitScript((fixtureOptions) => {

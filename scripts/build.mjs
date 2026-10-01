@@ -25,6 +25,10 @@ const resources = {
         "src/features/assessment/components/wikitext-comparison.vue",
     __VG_PAGE_ASSESSOR_WIKITEXT_COMPARISON_STYLES__:
         "src/features/assessment/components/wikitext-comparison.css",
+    __VG_PAGE_ASSESSOR_CATEGORY_DIALOG_TEMPLATE__:
+        "src/features/assessment/dialogs/category-dialog.vue",
+    __VG_PAGE_ASSESSOR_CATEGORY_DIALOG_STYLES__:
+        "src/features/assessment/dialogs/category-dialog.css",
 };
 
 async function cssText(relativePath, compact) {

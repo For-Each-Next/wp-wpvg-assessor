@@ -1,0 +1,105 @@
+.avgp-category-dialog.cdx-dialog {
+    width: calc(100vw - 2rem);
+    max-width: none;
+    height: calc(100dvh - 2rem);
+    max-height: calc(100dvh - 2rem);
+}
+
+.avgp-category-dialog .cdx-dialog__body {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.avgp-category-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-75, 0.75rem);
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+}
+
+.avgp-category-status:empty {
+    display: none;
+}
+
+.avgp-category-title {
+    font-size: var(--font-size-medium, 1rem);
+    line-height: 1.5;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.avgp-category-preview {
+    flex: 1 1 auto;
+    min-height: 12rem;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--border-color-muted, #dadde3);
+    background: #fff;
+}
+
+.avgp-category-class.cdx-field {
+    flex: 0 0 auto;
+    margin: 0;
+    min-width: 0;
+}
+
+.avgp-category-ratings {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-75, 0.75rem);
+}
+
+.avgp-category-rating-group {
+    flex: 0 0 auto;
+    max-width: 100%;
+}
+
+.avgp-category-review {
+    flex: 0 0 auto;
+}
+
+.avgp-category-review summary {
+    cursor: pointer;
+}
+
+.avgp-category-review pre {
+    max-height: 10rem;
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    background: var(--background-color-neutral-subtle, #f8f9fa);
+    padding: var(--spacing-75, 0.75rem);
+}
+
+.avgp-category-footer {
+    width: 100%;
+}
+
+.avgp-category-help {
+    color: var(--color-subtle, #54595d);
+    font-size: var(--font-size-small, 0.875rem);
+    margin: 0 0 var(--spacing-75, 0.75rem);
+}
+
+.avgp-category-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-75, 0.75rem);
+    justify-content: flex-end;
+}
+
+@media (max-width: 40rem) {
+    .avgp-category-dialog.cdx-dialog {
+        width: 100%;
+        height: 100dvh;
+        max-height: 100dvh;
+    }
+
+    .avgp-category-ratings {
+        gap: var(--spacing-50, 0.5rem);
+    }
+}

@@ -206,7 +206,7 @@ test("Stage retains the reviewed form without saving and clears prepared batch r
         async prepare() {
             return createPreparedBatch(state);
         },
-        stage(stagedState, review) {
+        async stage(stagedState, review) {
             assert.equal(stagedState, state);
             captured = review;
         },
@@ -227,8 +227,7 @@ test("Stage retains the reviewed form without saving and clears prepared batch r
     bindings.setRegister(false);
     await bindings.onSave();
     assert.equal(bindings.stagedTalkReviews.value.length, 1);
-    bindings.onStage();
-    await Promise.resolve();
+    await bindings.onStage();
 
     assert.deepEqual(captured, {
         listSummary: "Reviewed list summary",
@@ -247,7 +246,10 @@ test("Stage retains the reviewed form without saving and clears prepared batch r
     assert.equal(bindings.displayedListSummary.value, "Reviewed list summary");
     assert.equal(bindings.shouldRegister.value, false);
     assert.equal(bindings.stagedTalkReviews.value.length, 0);
-    assert.equal(bindings.status.value, "");
+    assert.equal(
+        bindings.status.value,
+        "Added to queue. You can submit it from any browser tab.",
+    );
 });
 
 test("reopening a staged page restores review and excludes it from Submit count", () => {
@@ -276,6 +278,45 @@ test("reopening a staged page restores review and excludes it from Submit count"
     assert.equal(bindings.stageLabel.value, "Unstage");
 });
 
+test("a pending Stage captures one reviewed draft and ignores a late result after Cancel", async () => {
+    const state = createDialogState();
+    const delayed = Promise.withResolvers<void>();
+    let captured: DialogSaveReview | undefined;
+    let calls = 0;
+    let closed = 0;
+    const observable = createObservableStaging({
+        async stage(_state, review) {
+            calls += 1;
+            captured = review;
+            await delayed.promise;
+        },
+    });
+    const bindings = createAssessmentDialogBindings(vue, {
+        currentNamespace: 0,
+        onClose() {
+            closed += 1;
+        },
+        runtime: { ...createRuntime(), staging: observable.staging },
+        state,
+    });
+    const manual = `${originalSource}\n<!-- Exact pending draft -->`;
+    bindings.onPreviewInput(manual);
+    bindings.onSummaryInput("Exact pending summary");
+    const staging = bindings.onStage();
+    assert.equal(bindings.preparing.value, true);
+    await bindings.onStage();
+    assert.equal(calls, 1);
+    assert.equal(captured?.previewText, manual);
+    assert.equal(captured?.summary, "Exact pending summary");
+    bindings.onCancel();
+    assert.equal(bindings.open.value, false);
+    assert.equal(observable.subscriberCount(), 0);
+    delayed.resolve();
+    await staging;
+    assert.equal(closed, 1);
+    assert.doesNotMatch(bindings.status.value, /Added to queue/u);
+});
+
 test("Unstage removes only the current draft while retaining its editable review", async () => {
     const state = createDialogState();
     const stagedReview: DialogSaveReview = {
@@ -297,7 +338,7 @@ test("Unstage removes only the current draft while retaining its editable review
         async prepare() {
             return createPreparedBatch(state);
         },
-        unstage(talkTitle) {
+        async unstage(talkTitle) {
             removedTitles.push(talkTitle);
             drafts.delete(talkTitle);
         },
@@ -319,8 +360,7 @@ test("Unstage removes only the current draft while retaining its editable review
     assert.equal(bindings.stagedTalkReviews.value.length, 1);
     assert.equal(bindings.submitLabel.value, "Submit (+2)");
 
-    bindings.onStage();
-    await Promise.resolve();
+    await bindings.onStage();
     assert.deepEqual(removedTitles, [state.talkTitle]);
     assert.deepEqual(
         [...drafts.keys()],
@@ -355,7 +395,7 @@ test("an Unstage storage failure keeps the draft and editable dialog available",
     const staging = createStaging({
         count: () => 1,
         getReview: () => stagedReview,
-        unstage(talkTitle) {
+        async unstage(talkTitle) {
             assert.equal(talkTitle, state.talkTitle);
             attempts += 1;
             throw new Error("Browser storage is unavailable.");
@@ -373,8 +413,7 @@ test("an Unstage storage failure keeps the draft and editable dialog available",
     bindings.onPreviewInput(editedSource);
     bindings.onSummaryInput("Edited current talk summary");
     bindings.setListSummary("Edited current list summary");
-    bindings.onStage();
-    await Promise.resolve();
+    await bindings.onStage();
 
     assert.equal(attempts, 1);
     assert.equal(staging.getReview(state.talkTitle), stagedReview);
@@ -488,6 +527,163 @@ test("changing reviewed inputs discards the prepared batch and requires review a
     assert.equal(prepares, 6);
 });
 
+test("an external queue change refreshes actions and discards prepared review while preserving the form", async () => {
+    const state = createDialogState();
+    let count = 1;
+    let currentReview: DialogSaveReview | null = null;
+    let prepares = 0;
+    const observable = createObservableStaging({
+        count: () => count,
+        getReview: () => currentReview,
+        async prepare() {
+            prepares += 1;
+            return createPreparedBatch(state);
+        },
+    });
+    const bindings = createAssessmentDialogBindings(vue, {
+        currentNamespace: 0,
+        onClose() {},
+        runtime: { ...createRuntime(), staging: observable.staging },
+        state,
+    });
+    const manual = `${originalSource}\n<!-- Current editable review -->`;
+    bindings.onPreviewInput(manual);
+    bindings.onSummaryInput("Current talk summary");
+    bindings.setListSummary("Current list summary");
+    bindings.setRegister(false);
+    await bindings.onSave();
+    assert.equal(bindings.stagedTalkReviews.value.length, 1);
+    assert.equal(bindings.displayedListSummary.value, "Combined list summary");
+
+    count = 3;
+    currentReview = {
+        listSummary: "Other tab list summary",
+        previewText: "Other tab reviewed source",
+        shouldRegister: true,
+        summary: "Other tab talk summary",
+    };
+    observable.notify();
+
+    assert.equal(bindings.stageLabel.value, "Unstage");
+    assert.equal(bindings.submitLabel.value, "Submit (+2)");
+    assert.equal(bindings.stagedTalkReviews.value.length, 0);
+    assert.equal(bindings.previewText.value, manual);
+    assert.equal(bindings.summary.value, "Current talk summary");
+    assert.equal(bindings.listSummary.value, "Current list summary");
+    assert.equal(bindings.displayedListSummary.value, "Current list summary");
+    assert.equal(bindings.shouldRegister.value, false);
+    assert.match(bindings.status.value, /changed/u);
+    await bindings.onSave();
+    assert.equal(prepares, 2);
+    assert.equal(bindings.stagedTalkReviews.value.length, 1);
+});
+
+test("an external queue change prevents an in-flight preparation from becoming saveable", async () => {
+    const state = createDialogState();
+    const delayed = Promise.withResolvers<PreparedAssessmentBatch>();
+    let count = 1;
+    let prepares = 0;
+    const observable = createObservableStaging({
+        count: () => count,
+        async prepare() {
+            prepares += 1;
+            return prepares === 1
+                ? delayed.promise
+                : createPreparedBatch(state);
+        },
+    });
+    const bindings = createAssessmentDialogBindings(vue, {
+        currentNamespace: 0,
+        onClose() {},
+        runtime: { ...createRuntime(), staging: observable.staging },
+        state,
+    });
+    const manual = `${originalSource}\n<!-- Editable while preparing -->`;
+    bindings.onPreviewInput(manual);
+    const preparing = bindings.onSave();
+    assert.equal(bindings.preparing.value, true);
+    count = 2;
+    observable.notify();
+    delayed.resolve(createPreparedBatch(state));
+    await preparing;
+
+    assert.equal(bindings.preparing.value, false);
+    assert.equal(bindings.stagedTalkReviews.value.length, 0);
+    assert.equal(bindings.submitLabel.value, "Submit (+2)");
+    assert.equal(bindings.previewText.value, manual);
+    assert.match(bindings.status.value, /changed/u);
+    await bindings.onSave();
+    assert.equal(prepares, 2);
+    assert.equal(bindings.stagedTalkReviews.value.length, 1);
+});
+
+test("queue notifications during submission do not discard the reviewed batch", async () => {
+    const state = createDialogState();
+    const delayed = Promise.withResolvers<void>();
+    let count = 1;
+    const observable = createObservableStaging({
+        count: () => count,
+        async prepare() {
+            return createPreparedBatch(state);
+        },
+        async save() {
+            count = 0;
+            observable.notify();
+            await delayed.promise;
+            throw new Error("Stop after confirmed notification handling.");
+        },
+    });
+    const bindings = createAssessmentDialogBindings(vue, {
+        currentNamespace: 0,
+        onClose() {},
+        runtime: { ...createRuntime(), staging: observable.staging },
+        state,
+    });
+    await bindings.onSave();
+    const saving = bindings.onSave();
+    assert.equal(bindings.saving.value, true);
+    assert.equal(bindings.stagedTalkReviews.value.length, 1);
+    assert.equal(bindings.displayedListSummary.value, "Combined list summary");
+    delayed.resolve();
+    await saving;
+    assert.equal(bindings.stagedTalkReviews.value.length, 0);
+    assert.equal(bindings.saving.value, false);
+});
+
+test("Cancel and unmount release the queue subscription", () => {
+    for (const dispose of ["cancel", "unmount"]) {
+        let count = 1;
+        let unmount: () => void = () => {
+            throw new Error("Unmount cleanup has not been registered.");
+        };
+        const observable = createObservableStaging({ count: () => count });
+        const bindings = createAssessmentDialogBindings(
+            {
+                ...vue,
+                onUnmounted(callback) {
+                    unmount = callback;
+                },
+            },
+            {
+                currentNamespace: 0,
+                onClose() {},
+                runtime: { ...createRuntime(), staging: observable.staging },
+                state: createDialogState(),
+            },
+        );
+        assert.equal(observable.subscriberCount(), 1);
+        if (dispose === "cancel") {
+            bindings.onCancel();
+        } else {
+            unmount();
+        }
+        assert.equal(observable.subscriberCount(), 0);
+        count = 2;
+        observable.notify();
+        assert.equal(bindings.submitLabel.value, "Submit (+1)");
+    }
+});
+
 test("a partial batch failure restores pending registration choice and remaining count", async () => {
     const state = createDialogState();
     let remainingReview: DialogSaveReview | null = null;
@@ -561,16 +757,38 @@ test("Cancel discards a delayed preparation result", async () => {
     assert.doesNotMatch(bindings.status.value, /Review the combined changes/u);
 });
 
+function createObservableStaging(
+    overrides: Partial<AssessmentStagingWorkflow>,
+) {
+    const listeners = new Set<() => void>();
+    return {
+        staging: createStaging({
+            ...overrides,
+            subscribe(listener) {
+                listeners.add(listener);
+                return () => {
+                    listeners.delete(listener);
+                };
+            },
+        }),
+        notify() {
+            for (const listener of listeners) listener();
+        },
+        subscriberCount: () => listeners.size,
+    };
+}
+
 function createStaging(
     overrides: Partial<AssessmentStagingWorkflow>,
 ): AssessmentStagingWorkflow {
     return {
         count: () => 0,
         getReview: () => null,
-        stage() {
+        subscribe: () => () => {},
+        async stage() {
             throw new Error("Unexpected staging call.");
         },
-        unstage() {
+        async unstage() {
             throw new Error("Unexpected unstaging call.");
         },
         async prepare() {

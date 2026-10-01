@@ -53,24 +53,34 @@ export function createAssessmentStagingWorkflow(
     const { session, logger } = operations;
     let submitting = false;
 
-    function stage(state: DialogState, review: DialogSaveReview): void {
+    async function stage(
+        state: DialogState,
+        review: DialogSaveReview,
+    ): Promise<void> {
         if (submitting) {
             throw new Error("A staged submission is already running.");
         }
-        const data = session.read();
-        data.drafts = mergeCurrentDraft(
-            data.drafts,
-            captureDraft(state, review),
-        );
-        delete data.pages[state.talkTitle];
-        session.write(data);
-        logger.info("draft.staged", { itemCount: data.drafts.length });
+        // Capture the reviewed values before waiting for another tab's save.
+        const draft = captureDraft(state, review);
+        await session.runExclusive(async () => {
+            const data = session.read();
+            data.drafts = mergeCurrentDraft(data.drafts, draft);
+            delete data.pages[draft.state.talkTitle];
+            session.write(data);
+            logger.info("draft.staged", { itemCount: data.drafts.length });
+        });
     }
 
-    function unstage(talkTitle: string): void {
+    async function unstage(talkTitle: string): Promise<void> {
         if (submitting) {
             throw new Error("A staged submission is already running.");
         }
+        await session.runExclusive(async () => {
+            removeDraft(talkTitle);
+        });
+    }
+
+    function removeDraft(talkTitle: string): void {
         const data = session.read();
         const draft = data.drafts.find(
             (entry) => entry.state.talkTitle === talkTitle,
@@ -182,58 +192,70 @@ export function createAssessmentStagingWorkflow(
         if (submitting) {
             throw new Error("A staged submission is already running.");
         }
+        submitting = true;
+        try {
+            return await session.runExclusive(async () =>
+                saveBatch(api, batch, reportPhase),
+            );
+        } finally {
+            submitting = false;
+        }
+    }
+
+    async function saveBatch(
+        api: mw.Api,
+        batch: PreparedAssessmentBatch,
+        reportPhase: ReportDialogSavePhase,
+    ) {
+        // Recheck only after acquiring the shared lock: another tab may have
+        // completed this batch while this submission was waiting.
         if (fingerprint(session.read().drafts) !== batch.draftSnapshot) {
             throw new Error(
                 operations.changedBatchMessage?.() ??
                     "The staged pages changed. Review the batch again before saving.",
             );
         }
-        submitting = true;
         let saved = false;
-        try {
-            const entries = batch.entries.map((entry) => ({
-                state: cloneSessionSnapshot(entry.state),
-                review: { ...entry.review },
-            }));
-            // Retain the current page too if any write fails or has an uncertain outcome.
-            const data = session.read();
-            data.drafts = structuredClone(entries);
-            session.write(data);
-            if (batch.registration != null) {
-                reportPhase("registration");
-                await operations.saveRegistration(
-                    api,
-                    batch.registration,
-                    batch.registrationSummary,
-                );
-                saved = true;
-            }
-            // Registration is now confirmed (or unnecessary). Never repeat it after a talk failure.
-            for (const entry of entries) {
-                entry.review.shouldRegister = false;
-            }
-            const registeredData = session.read();
-            registeredData.drafts = structuredClone(entries);
-            registeredData.newPageList = null;
-            registeredData.pages = {};
-            session.write(registeredData);
-            for (const entry of entries) {
-                const outcome = await operations.saveReviewedDialog(
-                    { ...structuredClone(entry.state), api },
-                    { ...entry.review, shouldRegister: false },
-                    reportPhase,
-                );
-                saved ||= outcome === "saved";
-                const completedData = session.read();
-                completedData.drafts = completedData.drafts.filter(
-                    (draft) => draft.state.talkTitle !== entry.state.talkTitle,
-                );
-                session.write(completedData);
-            }
-            return saved ? ("saved" as const) : ("unchanged" as const);
-        } finally {
-            submitting = false;
+        const entries = batch.entries.map((entry) => ({
+            state: cloneSessionSnapshot(entry.state),
+            review: { ...entry.review },
+        }));
+        // Retain the current page too if any write fails or has an uncertain outcome.
+        const data = session.read();
+        data.drafts = structuredClone(entries);
+        session.write(data);
+        if (batch.registration != null) {
+            reportPhase("registration");
+            await operations.saveRegistration(
+                api,
+                batch.registration,
+                batch.registrationSummary,
+            );
+            saved = true;
         }
+        // Registration is now confirmed (or unnecessary). Never repeat it after a talk failure.
+        for (const entry of entries) {
+            entry.review.shouldRegister = false;
+        }
+        const registeredData = session.read();
+        registeredData.drafts = structuredClone(entries);
+        registeredData.newPageList = null;
+        registeredData.pages = {};
+        session.write(registeredData);
+        for (const entry of entries) {
+            const outcome = await operations.saveReviewedDialog(
+                { ...structuredClone(entry.state), api },
+                { ...entry.review, shouldRegister: false },
+                reportPhase,
+            );
+            saved ||= outcome === "saved";
+            const completedData = session.read();
+            completedData.drafts = completedData.drafts.filter(
+                (draft) => draft.state.talkTitle !== entry.state.talkTitle,
+            );
+            session.write(completedData);
+        }
+        return saved ? ("saved" as const) : ("unchanged" as const);
     }
 
     return {
@@ -246,6 +268,7 @@ export function createAssessmentStagingWorkflow(
         },
         stage,
         unstage,
+        subscribe: (listener) => session.subscribe(listener),
         prepare,
         save,
     };

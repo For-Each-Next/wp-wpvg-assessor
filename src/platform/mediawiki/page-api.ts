@@ -141,6 +141,9 @@ async function fetchSubjectPageInfo(
     context.logger.debug("subject-page.fetch.started", { title });
     const page = await fetchPageInfo(context, api, title);
     const currentText = await fetchCurrentPageText(context, api, title);
+    if (currentText == null) {
+        throw new Error(`Unable to read the current subject page: ${title}.`);
+    }
     const redirectTarget = parseRedirectTarget(currentText);
     const targetTitle = redirectTarget || title;
     const creationTimes = await fetchRevisionCreationTimes(context, api, [
@@ -300,6 +303,10 @@ async function resolveRedirectTitle(
     title: string,
 ): Promise<void> {
     const text = await fetchCurrentPageText(context, api, title);
+    if (text == null) {
+        context.logger.debug("creation-times.title.missing");
+        return;
+    }
     const target = parseRedirectTarget(text) || title;
 
     resolvedTitles.set(title, target);
@@ -335,13 +342,13 @@ function mergeResolvedCreationTimes(
  *
  * @param api - MediaWiki API client.
  * @param title - Page title.
- * @returns Current page source.
+ * @returns Current page source, or null for an explicitly missing page.
  */
 async function fetchCurrentPageText(
     context: PageApiContext,
     api: mw.Api,
     title: string,
-): Promise<string> {
+): Promise<string | null> {
     context.logger.debug("current-page-text.fetch.started", { title });
     const response = await context.requests.get(
         api,
@@ -356,6 +363,13 @@ async function fetchCurrentPageText(
         },
     );
     const page = getFirstQueryPage(response);
+    if (page?.missing != null) {
+        context.logger.debug("current-page-text.fetch.completed", {
+            exists: false,
+            title,
+        });
+        return null;
+    }
     const revision = getFirstRevision(page);
     const text = getRevisionContent(revision);
 

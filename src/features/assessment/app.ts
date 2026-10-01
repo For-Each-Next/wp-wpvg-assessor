@@ -18,6 +18,10 @@ import {
     registerPageAssessorComponents,
 } from "../../platform/mediawiki/codex.ts";
 import { msg } from "../../i18n/index.ts";
+import {
+    CATEGORY_DIALOG_STYLES,
+    createCategoryDialogComponent,
+} from "./dialogs/category-dialog.ts";
 
 const HOST_ID = "avgp-dialog-host";
 const STYLE_ID = "avgp-styles";
@@ -95,7 +99,7 @@ function addToolboxLink(): void {
     const link = mw.util.addPortletLink(
         "p-tb",
         "#",
-        msg("tool.name"),
+        msg(isUnassessedCategory() ? "tool.batchName" : "tool.name"),
         "t-assess-vg-page",
     );
     link?.addEventListener("click", handleToolboxClick);
@@ -104,7 +108,92 @@ function addToolboxLink(): void {
 function handleToolboxClick(event: Event): void {
     event.preventDefault();
     getRuntime().logger.info("toolbox-link.activated");
-    openDialog().catch(handleOpenDialogError);
+    (isUnassessedCategory() ? openCategoryDialog() : openDialog()).catch(
+        handleOpenDialogError,
+    );
+}
+
+function isUnassessedCategory(): boolean {
+    if (mw.config.get("wgNamespaceNumber") !== 14) return false;
+    const title = mw.Title.newFromText(mw.config.get("wgPageName"));
+    return (
+        title != null &&
+        ["未评级电子游戏条目", "未評級電子遊戲條目"].includes(
+            title.getMainText(),
+        )
+    );
+}
+
+async function openCategoryDialog(): Promise<void> {
+    const generation = ++dialogGeneration;
+    const assessorRuntime = getRuntime();
+    const workflow = assessorRuntime.categoryAssessment;
+    if (workflow == null) {
+        throw new Error("Category assessment is unavailable.");
+    }
+    const sessionPromise = workflow.open(
+        assessorRuntime.createDialogPageContext().api,
+    );
+    void sessionPromise.catch(() => undefined);
+    let require: ResourceLoaderRequire;
+    try {
+        require = await loadVueAndCodex();
+    } catch (error) {
+        void sessionPromise.then(
+            (session) => session.dispose(),
+            () => undefined,
+        );
+        throw error;
+    }
+    if (generation !== dialogGeneration) {
+        void sessionPromise.then(
+            (session) => session.dispose(),
+            () => undefined,
+        );
+        return;
+    }
+    activeDialogCleanup?.();
+    mountLoadingDialog(require);
+    let session: Awaited<ReturnType<typeof workflow.open>>;
+    try {
+        session = await sessionPromise;
+    } catch (error) {
+        if (generation !== dialogGeneration) return;
+        activeDialogCleanup?.();
+        throw error;
+    }
+    if (generation !== dialogGeneration) {
+        session.dispose();
+        return;
+    }
+    activeDialogCleanup?.();
+    const Vue = require("vue");
+    const host = document.createElement("div");
+    host.id = HOST_ID;
+    document.documentElement.append(host);
+    let application: VueApp | null = null;
+    let cleaned = false;
+    function cleanup(): void {
+        if (cleaned) return;
+        cleaned = true;
+        application?.unmount();
+        session.dispose();
+        host.remove();
+        if (activeDialogCleanup === cleanup) activeDialogCleanup = null;
+    }
+    application = Vue.createMwApp(
+        createCategoryDialogComponent(Vue, {
+            runtime: assessorRuntime,
+            session,
+            onClose() {
+                cleanup();
+                restoreToolboxFocus();
+            },
+        }),
+    );
+    registerPageAssessorComponents(application, require("@wikimedia/codex"));
+    application.mount(host);
+    activeDialogCleanup = cleanup;
 }
 
 function handleOpenDialogError(error: unknown): void {
@@ -273,6 +362,7 @@ function installDialogStyles(): void {
         ASSESSMENT_DIALOG_STYLES,
         LOADING_DIALOG_STYLES,
         Comparison.WIKITEXT_COMPARISON_STYLES,
+        CATEGORY_DIALOG_STYLES,
     ].join("\n");
     document.head.append(style);
     getRuntime().logger.debug("styles.install.completed");

@@ -1,4 +1,4 @@
-/** Keeps reviewed drafts and read snapshots within one browser tab. */
+/** Shares reviewed drafts across tabs while keeping read snapshots per tab. */
 
 import type { DialogState } from "../../app/dialog-contracts.ts";
 import type {
@@ -20,23 +20,32 @@ type StoreText = (value: string) => number;
 type RestoreText = (value: unknown) => string;
 
 const MEMORY_SESSIONS = new Map<string, string>();
-const KEY_PREFIX = "wpvg-assessor.assessment-session.v2:";
+const MEMORY_QUEUES = new Map<string, string>();
+const EXCLUSIVE_OPERATIONS = new Map<string, Promise<unknown>>();
+const KEY_PREFIX = "wpvg-assessor.assessment-cache.v1:";
+const QUEUE_PREFIX = "wpvg-assessor.assessment-queue.v1:";
 
-/** Identity includes the wiki and account; sessionStorage isolates browser tabs. */
+/** Identity includes the wiki and account; only cached reads remain tab-local. */
 export function createAssessmentSessionStore(
     logger: Logger,
     identity: string,
 ): AssessmentSessionStore {
     const key = `${KEY_PREFIX}${encodeURIComponent(identity)}`;
+    const queueKey = `${QUEUE_PREFIX}${encodeURIComponent(identity)}`;
+    const baselines = new WeakMap<AssessmentSessionData, string>();
 
-    function read(): AssessmentSessionData {
+    function readStored(shared: boolean): AssessmentSessionData {
         let source: string | null;
         try {
-            const storage = globalThis.sessionStorage;
+            const storage = shared
+                ? globalThis.localStorage
+                : globalThis.sessionStorage;
             source =
                 storage == null
-                    ? (MEMORY_SESSIONS.get(key) ?? null)
-                    : storage.getItem(key);
+                    ? ((shared ? MEMORY_QUEUES : MEMORY_SESSIONS).get(
+                          shared ? queueKey : key,
+                      ) ?? null)
+                    : storage.getItem(shared ? queueKey : key);
         } catch (error) {
             logger.warn("assessment-session.read.failed");
             throw error;
@@ -52,15 +61,56 @@ export function createAssessmentSessionStore(
         }
     }
 
+    function writeStored(shared: boolean, data: AssessmentSessionData): void {
+        const source = JSON.stringify(serializeSession(data));
+        const storage = shared
+            ? globalThis.localStorage
+            : globalThis.sessionStorage;
+        if (storage == null)
+            (shared ? MEMORY_QUEUES : MEMORY_SESSIONS).set(
+                shared ? queueKey : key,
+                source,
+            );
+        else storage.setItem(shared ? queueKey : key, source);
+    }
+
+    function read(): AssessmentSessionData {
+        const cached = readStored(false);
+        const queued = readStored(true);
+        const data = {
+            ...cached,
+            drafts: queued.drafts,
+        };
+        baselines.set(data, serializeDrafts(data.drafts));
+        return data;
+    }
+
+    function writeCache(cached: AssessmentSessionData): void {
+        try {
+            writeStored(false, cached);
+        } catch {
+            // Cached snapshots are disposable. The shared queue already
+            // preserves all drafts even if a cache refresh fails.
+            logger.warn("assessment-session.cache.write.failed");
+        }
+    }
+
     function write(data: AssessmentSessionData): void {
         try {
             // Validate and reconstruct before storage, omitting runtime objects
             // and unknown fields. Serialization also separates all mutable data.
             const restored = restoreSession(serializeSession(data));
-            const source = JSON.stringify(serializeSession(restored));
-            const storage = globalThis.sessionStorage;
-            if (storage == null) MEMORY_SESSIONS.set(key, source);
-            else storage.setItem(key, source);
+            const draftSource = serializeDrafts(restored.drafts);
+            if (baselines.get(data) !== draftSource) {
+                // Publish first: a failed queue write must not make a cache
+                // update look like a successful stage.
+                writeStored(true, {
+                    ...emptySession(),
+                    drafts: restored.drafts,
+                });
+                baselines.set(data, draftSource);
+            }
+            writeCache({ ...restored, drafts: [] });
             logger.debug("assessment-session.write.completed", {
                 drafts: restored.drafts.length,
                 pages: Object.keys(restored.pages).length,
@@ -71,7 +121,46 @@ export function createAssessmentSessionStore(
         }
     }
 
-    return Object.freeze({ read, write });
+    function subscribe(listener: () => void): () => void {
+        if (typeof globalThis.addEventListener !== "function") return () => {};
+        const storageChanged = (event: StorageEvent) => {
+            if (
+                event.storageArea != null &&
+                event.storageArea !== globalThis.localStorage
+            )
+                return;
+            if (event.key === queueKey || event.key === null) listener();
+        };
+        globalThis.addEventListener("storage", storageChanged);
+        return () => globalThis.removeEventListener("storage", storageChanged);
+    }
+
+    async function runExclusive<T>(operation: () => Promise<T>): Promise<T> {
+        const locks = globalThis.navigator?.locks;
+        if (locks !== undefined) return locks.request(queueKey, operation);
+        if (typeof globalThis.window !== "undefined")
+            throw new Error(
+                "Shared assessment drafts require browser Web Locks support",
+            );
+        // Offline consumers have no browser tabs, but still need deterministic
+        // serialization across separately constructed stores of one identity.
+        const previous =
+            EXCLUSIVE_OPERATIONS.get(queueKey) ?? Promise.resolve();
+        const current = previous.catch(() => {}).then(operation);
+        EXCLUSIVE_OPERATIONS.set(queueKey, current);
+        try {
+            return await current;
+        } finally {
+            if (EXCLUSIVE_OPERATIONS.get(queueKey) === current)
+                EXCLUSIVE_OPERATIONS.delete(queueKey);
+        }
+    }
+
+    return Object.freeze({ read, write, subscribe, runExclusive });
+}
+
+function serializeDrafts(drafts: StagedAssessment[]): string {
+    return JSON.stringify(serializeSession({ ...emptySession(), drafts }));
 }
 
 function emptySession(): AssessmentSessionData {
