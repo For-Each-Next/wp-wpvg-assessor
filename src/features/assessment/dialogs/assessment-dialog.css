@@ -4,10 +4,14 @@
 
 .avgp-dialog__actions {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: var(--spacing-75, 0.75rem);
     justify-content: flex-end;
     width: 100%;
+}
+
+.avgp-dialog__actions--stacked {
+    flex-direction: column;
 }
 
 .avgp-dialog__body {

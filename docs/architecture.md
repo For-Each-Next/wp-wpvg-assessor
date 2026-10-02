@@ -1,8 +1,35 @@
 # Architecture
 
+**Required UI standard:** follow the [Wikimedia Codex types and order of buttons](https://doc.wikimedia.org/codex/latest/style-guide/using-links-and-buttons.html#types-and-order-of-buttons). Use one primary progressive action per group, normal secondary actions, and quiet tertiary actions. Cancellation is neutral; reserve destructive actions for irreversible changes. Put the primary action last in horizontal flows (respecting LTR/RTL reading direction) and first when stacked. Dialog footers align to the inline end; separate ordinary buttons with `spacing-75` (12px). Codex ButtonGroup supplies its own spacing. Keep visual and keyboard order aligned.
+
 WPVG Assessor separates application workflows, pure rules, host integration,
 and interface components. It uses ordinary functions, explicit TypeScript
 interfaces, and relative imports. The project builds and verifies independently.
+
+## Folder names and ownership
+
+| Path                       | Responsibility                                                             |
+| -------------------------- | -------------------------------------------------------------------------- |
+| `src/app/`                 | Startup, application workflows, and their consumer contracts.              |
+| `src/domain/`              | Pure assessment, registration, title, and comparison rules.                |
+| `src/platform/mediawiki/`  | ResourceLoader, page context, API adapters, and native notifications.      |
+| `src/platform/browser/`    | Storage, locking, caching, and article-preview styles.                     |
+| `src/features/assessment/` | Dialog lifecycle, controls, review, and presentation.                      |
+| `src/shared/`              | Host-independent logging, translation, and notification contracts.         |
+| `src/i18n/`                | Aligned English, Simplified Chinese, and Traditional Chinese catalogs.     |
+| `src/types/`               | Ambient host and build declarations.                                       |
+| `tests/`                   | Offline unit/service tests; browser fixtures and scenarios in `tests/ui/`. |
+| `scripts/`                 | Build, validation, and release tools executed by Node.js.                  |
+| `docs/`                    | Technical and workflow reference; numbered images in `docs/images/`.       |
+| `dist/`                    | Generated installation artifacts, excluded from Git.                       |
+
+Use lowercase kebab-case for folders and TypeScript, CSS, and template files.
+Name modules for their capability, reserve `index.ts` for a deliberate public
+boundary, use `*.test.ts` for unit/service tests and `*.spec.ts` for browser
+scenarios. Keep each template-only Vue component beside its same-named
+TypeScript behavior and scoped CSS. Add modules when a capability needs an
+owner; keep domain rules out of generic utility folders. Installation artifact
+names retain their existing underscores for compatibility.
 
 ## Ownership and dependencies
 
@@ -83,3 +110,8 @@ TypeScript and Vue templates are checked without emitting source. Unit and
 service tests use Node's test runner. Playwright tests run the actual built
 browser gadget
 against a local mocked MediaWiki host.
+
+Documentation images come from `npm run screenshots` using a 1024 × 768 viewport
+and DPR 1. They exercise the built gadget through the same offline MediaWiki, Vue,
+and Codex fixtures as the interaction suite. See [contributing](../CONTRIBUTING.md)
+for button, message, accessibility, and screenshot review requirements.

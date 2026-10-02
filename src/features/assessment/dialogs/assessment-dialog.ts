@@ -72,6 +72,15 @@ interface StagedTalkReview {
     title: string;
 }
 
+interface DialogAction {
+    id: "cancel" | "stage" | "submit";
+    action: "default" | "progressive";
+    weight: "quiet" | "normal" | "primary";
+    label: string;
+    disabled: boolean;
+    activate(): void | Promise<void>;
+}
+
 export interface AssessmentDialogOptions {
     currentNamespace: number;
     onClose: () => void;
@@ -88,6 +97,7 @@ interface DialogBindings {
     commitClassName: () => void;
     currentSource: VueRef<string>;
     dialogTitle: string;
+    footerActions: VueRef<DialogAction[]>;
     importanceOptions: VueRef<Array<LabelledAssessmentValue<string>>>;
     interfaceLocale: string;
     listComparison: VueRef<WikitextComparison>;
@@ -118,6 +128,7 @@ interface DialogBindings {
     showRegistrationPreview: VueRef<boolean>;
     showListReview: VueRef<boolean>;
     stagedTalkReviews: VueRef<StagedTalkReview[]>;
+    stackedActions: VueRef<boolean>;
     stagingAvailable: boolean;
     stageLabel: VueRef<string>;
     status: VueRef<string>;
@@ -231,6 +242,15 @@ export function createAssessmentDialogBindings(
     let stagingPending = false;
     let unsubscribeStaging: (() => void) | undefined;
     let closeTimer: ReturnType<typeof setTimeout> | undefined;
+    const actionLayout =
+        typeof matchMedia === "function"
+            ? matchMedia("(max-width: 40rem)")
+            : undefined;
+    const stackedActions = Vue.ref(actionLayout?.matches ?? false);
+    const updateActionLayout = (): void => {
+        stackedActions.value = actionLayout?.matches ?? false;
+    };
+    actionLayout?.addEventListener("change", updateActionLayout);
     Vue.onUnmounted(release);
     const status = Vue.ref("");
     const statusType = Vue.ref<MessageType>("notice");
@@ -461,6 +481,7 @@ export function createAssessmentDialogBindings(
 
     function release(): void {
         active = false;
+        actionLayout?.removeEventListener("change", updateActionLayout);
         unsubscribeStaging?.();
         unsubscribeStaging = undefined;
         if (closeTimer != null) {
@@ -693,6 +714,38 @@ export function createAssessmentDialogBindings(
     const stageLabel = Vue.computed(function getStageLabel() {
         return msg(currentStaged.value ? "dialog.unstage" : "dialog.stage");
     });
+    const footerActions = Vue.computed<DialogAction[]>(() => {
+        const actions: DialogAction[] = [
+            {
+                id: "cancel",
+                action: "default",
+                weight: "quiet",
+                label: msg("dialog.cancel"),
+                disabled: saving.value,
+                activate: onCancel,
+            },
+        ];
+        if (runtime.staging != null) {
+            actions.push({
+                id: "stage",
+                action: "default",
+                weight: "normal",
+                label: stageLabel.value,
+                disabled: saving.value || preparing.value,
+                activate: onStage,
+            });
+        }
+        actions.push({
+            id: "submit",
+            action: "progressive",
+            weight: "primary",
+            label: submitLabel.value,
+            disabled: saving.value || preparing.value,
+            activate: onSave,
+        });
+        // Change DOM order along with layout so keyboard and visual order agree.
+        return stackedActions.value ? actions.reverse() : actions;
+    });
     const displayedListSummary = Vue.computed(function getListSummary() {
         return !batchPrepared.value
             ? listSummary.value
@@ -729,6 +782,7 @@ export function createAssessmentDialogBindings(
         currentSource,
         dialogTitle: msg("dialog.title", { title: state.subjectTitle }),
         displayedListSummary,
+        footerActions,
         importanceOptions,
         interfaceLocale,
         listComparison,
@@ -759,6 +813,7 @@ export function createAssessmentDialogBindings(
         showRegistrationPreview,
         showListReview,
         stagedTalkReviews,
+        stackedActions,
         stagingAvailable: runtime.staging != null,
         stageLabel,
         status,

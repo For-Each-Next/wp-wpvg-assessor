@@ -4,6 +4,7 @@ import type { Page } from "@playwright/test";
 interface FixtureOptions {
     alreadyRegistered?: boolean;
     articleCss?: string;
+    articleError?: boolean;
     articleHtml?: Record<string, string>;
     categoryError?: boolean;
     categoryMembers?: string[];
@@ -52,7 +53,7 @@ export const test = base.extend({
         await context.route("**/*", async (route) => {
             const url = new URL(route.request().url());
             if (
-                url.origin === "http://127.0.0.1:4173" &&
+                url.origin === "http://127.0.0.1:4176" &&
                 allowedPaths.has(url.pathname)
             ) {
                 await route.continue();

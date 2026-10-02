@@ -8,31 +8,19 @@
         @update:open="onOpenChange"
     >
         <template #footer>
-            <div class="avgp-dialog__actions">
+            <div
+                class="avgp-dialog__actions"
+                :class="{ 'avgp-dialog__actions--stacked': stackedActions }"
+            >
                 <cdx-button
-                    action="destructive"
-                    weight="quiet"
-                    :disabled="saving"
-                    @click="onCancel"
+                    v-for="action in footerActions"
+                    :key="action.id"
+                    :action="action.action"
+                    :weight="action.weight"
+                    :disabled="action.disabled"
+                    @click="action.activate"
                 >
-                    {{ msg("dialog.cancel") }}
-                </cdx-button>
-                <cdx-button
-                    v-if="stagingAvailable"
-                    action="default"
-                    weight="normal"
-                    :disabled="saving || preparing"
-                    @click="onStage"
-                >
-                    {{ stageLabel }}
-                </cdx-button>
-                <cdx-button
-                    action="progressive"
-                    weight="primary"
-                    :disabled="saving || preparing"
-                    @click="onSave"
-                >
-                    {{ submitLabel }}
+                    {{ action.label }}
                 </cdx-button>
             </div>
         </template>
@@ -250,12 +238,14 @@
                 <h2 id="avgp-registration-title" class="avgp-section-title">
                     {{ msg("dialog.newPageList") }}
                 </h2>
-                <p
+                <cdx-message
                     v-if="registrationDisabled"
                     class="avgp-registration-message"
+                    type="notice"
+                    :inline="true"
                 >
                     {{ registrationLabel }}
-                </p>
+                </cdx-message>
                 <cdx-checkbox
                     v-else
                     class="avgp-registration-choice"

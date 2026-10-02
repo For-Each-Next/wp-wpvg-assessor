@@ -91,15 +91,15 @@
                 </p>
                 <div class="avgp-category-actions">
                     <cdx-button
-                        action="destructive"
+                        action="default"
                         weight="quiet"
                         @click="onBatchCancel"
                         >{{ msg("dialog.cancel") }}</cdx-button
                     >
                     <cdx-button
                         v-if="batchError && !batchArticle"
-                        action="default"
-                        weight="normal"
+                        action="progressive"
+                        weight="primary"
                         :disabled="batchBusy"
                         @click="onBatchRetry"
                         >{{ msg("batch.retry") }}</cdx-button

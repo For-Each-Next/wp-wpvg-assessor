@@ -141,6 +141,8 @@
                 );
             if (params.action === "parse") {
                 await articleHold;
+                if (options.articleError)
+                    throw new Error("Article preview temporarily unavailable");
                 const title = String(params.page);
                 return {
                     parse: {

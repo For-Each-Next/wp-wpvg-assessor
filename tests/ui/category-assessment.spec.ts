@@ -18,6 +18,25 @@ const talkSummary = (page: Page) =>
         exact: true,
     });
 
+test("category loading failure offers neutral cancellation and one primary retry", async ({
+    page,
+}) => {
+    const dialog = await openCategoryAssessor(page, { articleError: true });
+    const footer = dialog.locator(".cdx-dialog__footer");
+    await expect(footer.getByRole("button")).toHaveText(["Cancel", "Retry"]);
+    await expect(
+        footer.getByRole("button", { name: "Cancel", exact: true }),
+    ).toHaveClass(/\bcdx-button--action-default\b/u);
+    const retry = footer.getByRole("button", { name: "Retry", exact: true });
+    await expect(retry).toHaveClass(/\bcdx-button--action-progressive\b/u);
+    await expect(retry).toHaveClass(/\bcdx-button--weight-primary\b/u);
+    await retry.click();
+    await expect(retry).toBeEnabled();
+    await footer.getByRole("button", { name: "Cancel", exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    expect(await getPosts(page)).toEqual([]);
+});
+
 async function reviewSource(page: Page): Promise<string> {
     const details = page.locator(".avgp-category-review");
     if (!(await details.evaluate((element) => element.hasAttribute("open")))) {
@@ -712,7 +731,7 @@ for (const width of [360, 1440]) {
         const footer = dialog.locator(".cdx-dialog__footer");
         await expect(footer.getByRole("button")).toHaveText(["Cancel"]);
         await expect(batchButton(page, "Cancel")).toHaveClass(
-            /\bcdx-button--action-destructive\b/u,
+            /\bcdx-button--action-default\b/u,
         );
         await expect(batchButton(page, "Cancel")).toHaveClass(
             /\bcdx-button--weight-quiet\b/u,

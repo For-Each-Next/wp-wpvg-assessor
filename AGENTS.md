@@ -1,5 +1,7 @@
 # WPVG Assessor contributor instructions
 
+**Required UI standard:** follow the [Wikimedia Codex types and order of buttons](https://doc.wikimedia.org/codex/latest/style-guide/using-links-and-buttons.html#types-and-order-of-buttons). Use one primary progressive action per group, normal secondary actions, and quiet tertiary actions. Cancellation is neutral; reserve destructive actions for irreversible changes. Put the primary action last in horizontal flows (respecting LTR/RTL reading direction) and first when stacked. Dialog footers align to the inline end; separate ordinary buttons with `spacing-75` (12px). Codex ButtonGroup supplies its own spacing. Keep visual and keyboard order aligned.
+
 Read `CONTRIBUTING.md` and `docs/architecture.md` before changing structure.
 
 - Keep startup and workflows in `src/app/`, pure rules in `src/domain/`, host

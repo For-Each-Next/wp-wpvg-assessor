@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.2] - 2026-10-02
+
+- Harmonized contributor guidance, capability ownership and file naming, compact
+  product documentation, and reproducible 1024px documentation screenshots.
+- Use neutral cancellation, primary progressive retry, and contextual Codex
+  eligibility notices. Stack assessment actions with Submit first on smaller
+  screens, preserving matching focus order and 12px button spacing.
+  Contributor guidance requires the [Codex types and order of buttons](https://doc.wikimedia.org/codex/latest/style-guide/using-links-and-buttons.html#types-and-order-of-buttons).
+
 ## 0.2.1 - 2026-10-01
 
 - Fixed talk-page loading when the same date in the new-page list contains

@@ -6,12 +6,12 @@ export default defineConfig({
     timeout: 30_000,
     forbidOnly: Boolean(process.env.CI),
     retries: process.env.CI ? 1 : 0,
-    workers: process.env.CI ? 2 : undefined,
+    workers: 2,
     outputDir: "./test-results",
     reporter: process.env.CI ? "github" : "list",
     use: {
         ...devices["Desktop Chrome"],
-        baseURL: "http://127.0.0.1:4173",
+        baseURL: "http://127.0.0.1:4176",
         serviceWorkers: "block",
         ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE == null
             ? {}
@@ -24,7 +24,7 @@ export default defineConfig({
     },
     webServer: {
         command: "node tests/ui/server.mjs",
-        url: "http://127.0.0.1:4173/tests/ui/index.html",
+        url: "http://127.0.0.1:4176/tests/ui/index.html",
         reuseExistingServer: !process.env.CI,
     },
 });

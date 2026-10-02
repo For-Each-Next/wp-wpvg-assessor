@@ -1,5 +1,7 @@
 # Review workflow
 
+**Required UI standard:** follow the [Wikimedia Codex types and order of buttons](https://doc.wikimedia.org/codex/latest/style-guide/using-links-and-buttons.html#types-and-order-of-buttons). Use one primary progressive action per group, normal secondary actions, and quiet tertiary actions. Cancellation is neutral; reserve destructive actions for irreversible changes. Put the primary action last in horizontal flows (respecting LTR/RTL reading direction) and first when stacked. Dialog footers align to the inline end; separate ordinary buttons with `spacing-75` (12px). Codex ButtonGroup supplies its own spacing. Keep visual and keyboard order aligned.
+
 The gadget opens from the page tools on Chinese Wikipedia. It resolves the
 subject and talk titles, reads the subject's creation information, loads the
 talk-page lead and new-page list, and prepares registration before showing
@@ -16,6 +18,8 @@ still stop loading, and the current subject must have readable source and a
 creation date.
 
 ## Assessment and review
+
+![Assessment choices at a 1024px viewport](images/screenshot-01.png)
 
 Existing banner values initialize the controls. Uncommon class values display
 in the editable input, and uncommon importance values remain selectable when
@@ -47,6 +51,8 @@ Only confirmed retired Video games parameters are removed automatically;
 supported and custom parameters on project banners remain in the reviewed
 source. The supplied 宝可梦系列 example exercises this cleanup with existing
 Pokémon, Nintendo, ACG, and Japan assessments.
+
+![Exact proposed talk-page lead and comparison at a 1024px viewport](images/screenshot-02.png)
 
 The edit-summary field controls the talk-page summary. If the article is
 eligible for registration, select the registration checkbox to review its
@@ -108,6 +114,8 @@ overwrite the shared queue. Staged drafts are restored exclusively from the
 shared `localStorage` queue; the separate per-tab cache stores read snapshots.
 
 ## Category assessment
+
+![Category article preview and assessment actions at a 1024px viewport](images/screenshot-03.png)
 
 On the unassessed Video games category, the page-tool action becomes
 **Batch assess articles (批量评级条目)**. The category interface uses a nearly
@@ -180,3 +188,7 @@ latest wiki state before retrying; reopening reads the current state.
 
 Automated verification exercises these behaviors with local fixtures. It does
 not establish compatibility with every deployed wiki extension or skin.
+
+All documentation screenshots use an offline 1024 × 768 viewport with DPR 1.
+Regenerate them with `npm run screenshots`; see [contributing](../CONTRIBUTING.md)
+for the required Codex button hierarchy and screenshot inspection workflow.

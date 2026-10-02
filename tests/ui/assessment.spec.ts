@@ -559,7 +559,7 @@ test("custom assessment values remain selectable and clearing importance preserv
     await expect(readySource(page)).toHaveValue(/importance=High/u);
 });
 
-for (const width of [360, 1440]) {
+for (const width of [360, 1024, 1440]) {
     test(`the ${width}px dialog keeps labeled controls and actions inside the viewport`, async ({
         page,
     }) => {
@@ -625,7 +625,12 @@ for (const width of [360, 1440]) {
         );
         const footer = dialog.locator(".cdx-dialog__footer");
         const footerButtons = footer.getByRole("button");
-        await expect(footerButtons).toHaveText(["Cancel", "Stage", "Submit"]);
+        const stacked = width <= 640;
+        await expect(footerButtons).toHaveText(
+            stacked
+                ? ["Submit", "Stage", "Cancel"]
+                : ["Cancel", "Stage", "Submit"],
+        );
         const cancel = footer.getByRole("button", {
             name: "Cancel",
             exact: true,
@@ -639,7 +644,7 @@ for (const width of [360, 1440]) {
             exact: true,
         });
         for (const [button, action, weight] of [
-            [cancel, "destructive", "quiet"],
+            [cancel, "default", "quiet"],
             [store, "default", "normal"],
             [submit, "progressive", "primary"],
         ] as const) {
@@ -663,6 +668,12 @@ for (const width of [360, 1440]) {
             }),
         );
         for (let index = 1; index < buttonBounds.length; index += 1) {
+            if (stacked) {
+                expect(
+                    buttonBounds[index].top - buttonBounds[index - 1].bottom,
+                ).toBeCloseTo(12, 0);
+                continue;
+            }
             expect(buttonBounds[index - 1].right).toBeLessThanOrEqual(
                 buttonBounds[index].left,
             );
@@ -673,16 +684,18 @@ for (const width of [360, 1440]) {
                 buttonBounds[index - 1].top,
             );
         }
-        await cancel.focus();
-        await expect(cancel).toBeFocused();
+        const first = stacked ? submit : cancel;
+        const last = stacked ? cancel : submit;
+        await first.focus();
+        await expect(first).toBeFocused();
         await page.keyboard.press("Tab");
         await expect(store).toBeFocused();
         await page.keyboard.press("Tab");
-        await expect(submit).toBeFocused();
+        await expect(last).toBeFocused();
         await page.keyboard.press("Shift+Tab");
         await expect(store).toBeFocused();
         await page.keyboard.press("Shift+Tab");
-        await expect(cancel).toBeFocused();
+        await expect(first).toBeFocused();
         const screenshotDirectory = process.env.WPVG_SCREENSHOT_DIR;
         if (screenshotDirectory) {
             await mkdir(screenshotDirectory, { recursive: true });
@@ -703,6 +716,54 @@ for (const width of [360, 1440]) {
             .last()
             .click();
         await expect(dialog).toHaveCount(0);
+        expect(await getPosts(page)).toEqual([]);
+    });
+}
+
+for (const width of [360, 1024]) {
+    test(`the ${width}px RTL footer retains reading, visual, and keyboard action order`, async ({
+        page,
+    }) => {
+        await page.setViewportSize({ width, height: 900 });
+        const dialog = await openAssessor(page);
+        await page.evaluate(() => {
+            document.documentElement.dir = "rtl";
+        });
+        const buttons = dialog
+            .locator(".cdx-dialog__footer")
+            .getByRole("button");
+        await expect(buttons).toHaveText(
+            width <= 640
+                ? ["Submit", "Stage", "Cancel"]
+                : ["Cancel", "Stage", "Submit"],
+        );
+        const bounds = await buttons.evaluateAll((elements) =>
+            elements.map((element) => {
+                const box = element.getBoundingClientRect();
+                return {
+                    top: box.top,
+                    bottom: box.bottom,
+                    left: box.left,
+                    right: box.right,
+                };
+            }),
+        );
+        for (let index = 1; index < bounds.length; index += 1) {
+            if (width <= 640) {
+                expect(
+                    bounds[index].top - bounds[index - 1].bottom,
+                ).toBeCloseTo(12, 0);
+            } else {
+                expect(
+                    bounds[index - 1].left - bounds[index].right,
+                ).toBeCloseTo(12, 0);
+            }
+        }
+        await buttons.nth(0).focus();
+        for (let index = 1; index < (await buttons.count()); index += 1) {
+            await page.keyboard.press("Tab");
+            await expect(buttons.nth(index)).toBeFocused();
+        }
         expect(await getPosts(page)).toEqual([]);
     });
 }
