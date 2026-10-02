@@ -1,3 +1,11 @@
+<!--
+@file src/features/assessment/dialogs/category-dialog.vue
+Purpose: src / features / assessment / dialogs / category dialog module.
+
+Table of contents:
+1. Template
+-->
+
 <template>
     <cdx-dialog
         v-model:open="batchOpen"

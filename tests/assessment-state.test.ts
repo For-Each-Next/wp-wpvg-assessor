@@ -1,4 +1,15 @@
-/** Offline checks for assessment-only loading and namespace targeting. */
+/**
+ * @file tests/assessment-state.test.ts
+ * Purpose: Offline checks for assessment-only loading and namespace targeting.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. Test scenarios
+ * 4. createOperations
+ * 5. createTitle
+ * 6. createPage
+ */
 
 import assert from "node:assert/strict";
 import test from "node:test";

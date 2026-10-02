@@ -1,4 +1,13 @@
-/** MediaWiki-styled rendering for structured wikitext comparisons. */
+/**
+ * @file src/features/assessment/components/wikitext-comparison.ts
+ * Purpose: MediaWiki-styled rendering for structured wikitext comparisons.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. WikitextComparisonProps
+ * 3. Constants and state
+ * 4. createWikitextComparisonComponent
+ */
 
 import type { VueModule } from "../../../platform/mediawiki/codex.ts";
 import type { WikitextComparison } from "../../../domain/wikitext-comparison.ts";

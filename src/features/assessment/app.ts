@@ -1,5 +1,28 @@
 /**
- * Mounts the assessor UI in supported MediaWiki pages.
+ * @file src/features/assessment/app.ts
+ * Purpose: Mounts the assessor UI in supported MediaWiki pages.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. startPageAssessor
+ * 4. initializePageAssessorRuntime
+ * 5. init
+ * 6. addToolboxLink
+ * 7. handleToolboxClick
+ * 8. isUnassessedCategory
+ * 9. openCategoryDialog
+ * 10. handleOpenDialogError
+ * 11. openDialog
+ * 12. loadDialogStateForCurrentPage
+ * 13. loadVueAndCodex
+ * 14. mountLoadingDialog
+ * 15. mountAssessmentDialog
+ * 16. refreshPage
+ * 17. restoreToolboxFocus
+ * 18. installDialogStyles
+ * 19. getRuntime
+ * 20. getErrorMessage
  */
 
 import type { PageAssessorRuntime } from "../../app/dialog-contracts.ts";
@@ -48,6 +71,7 @@ export function startPageAssessor(dependencies: PageAssessorRuntime): void {
                 "mediawiki.api",
                 "mediawiki.Title",
                 "mediawiki.util",
+                "@wikimedia/codex",
             ]),
         init,
     );
@@ -102,7 +126,15 @@ function addToolboxLink(): void {
         msg(isUnassessedCategory() ? "tool.batchName" : "tool.name"),
         "t-assess-vg-page",
     );
-    link?.addEventListener("click", handleToolboxClick);
+    if (!link) return;
+    const anchor = link.querySelector("a");
+    if (!anchor) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "cdx-button cdx-button--weight-quiet";
+    button.textContent = anchor.textContent;
+    anchor.replaceWith(button);
+    button.addEventListener("click", handleToolboxClick);
 }
 
 function handleToolboxClick(event: Event): void {
@@ -345,7 +377,9 @@ function refreshPage(): void {
 
 function restoreToolboxFocus(): void {
     document
-        .querySelector<HTMLElement>("#t-assess-vg-page a, #t-assess-vg-page")
+        .querySelector<HTMLElement>(
+            "#t-assess-vg-page button, button#t-assess-vg-page",
+        )
         ?.focus();
 }
 

@@ -1,5 +1,17 @@
 /**
- * Loads the talk assessment and WikiProject log in one API query.
+ * @file src/platform/mediawiki/assessment-page-api.ts
+ * Purpose: Loads the talk assessment and WikiProject log in one API query.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. AssessmentPageApi
+ * 3. createAssessmentPageApi
+ * 4. createAssessmentPageParams
+ * 5. decodeAssessmentPagesResponse
+ * 6. findPageByTitle
+ * 7. findRequestedTalkPage
+ * 8. decodeTalkPage
+ * 9. decodeNewPageList
  */
 
 import type {

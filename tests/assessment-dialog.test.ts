@@ -1,4 +1,17 @@
-/** Assessment controls retain shared class while video-game scope is disabled. */
+/**
+ * @file tests/assessment-dialog.test.ts
+ * Purpose: Assessment controls retain shared class while video-game scope is disabled.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. Test scenarios
+ * 4. createObservableStaging
+ * 5. createStaging
+ * 6. createPreparedBatch
+ * 7. createRuntime
+ * 8. createDialogState
+ */
 
 import assert from "node:assert/strict";
 import test from "node:test";

@@ -1,5 +1,18 @@
 /**
- * Saves the exact reviewed talk-page top section.
+ * @file src/app/save-talk-assessment.ts
+ * Purpose: Saves the exact reviewed talk-page top section.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. TalkPageUpdate
+ * 4. TalkSaveAdapters
+ * 5. createTalkSaveWorkflow
+ * 6. saveTalkAssessment
+ * 7. saveTalkAssessmentAttempt
+ * 8. buildTalkAssessmentUpdate
+ * 9. shouldSkipTalkAssessmentSave
+ * 10. isEditConflict
  */
 
 import {

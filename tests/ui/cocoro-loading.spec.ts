@@ -1,3 +1,13 @@
+/**
+ * @file tests/ui/cocoro-loading.spec.ts
+ * Purpose: tests / ui / cocoro loading.spec module.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. Test scenarios
+ */
+
 import {
     chooseOption,
     expect,

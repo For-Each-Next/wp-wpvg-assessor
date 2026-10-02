@@ -1,4 +1,13 @@
-/** Tests reusable structured wikitext comparisons. */
+/**
+ * @file tests/wikitext-comparison.test.ts
+ * Purpose: Tests reusable structured wikitext comparisons.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. getText
+ * 3. getChangedText
+ * 4. Test scenarios
+ */
 
 import assert from "node:assert/strict";
 import test from "node:test";

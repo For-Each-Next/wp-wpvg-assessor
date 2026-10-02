@@ -1,5 +1,14 @@
-/** Reproducible product documentation images from an entirely offline host. */
-import { mkdir } from "node:fs/promises";
+/**
+ * @file tests/ui/screenshots.spec.ts
+ * Purpose: Reproducible product documentation images from an entirely offline host.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Test scenarios
+ * 3. Constants and state
+ */
+
+import { mkdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
     chooseOption,
@@ -17,9 +26,46 @@ test.skip(
 );
 
 const directory = resolve("docs/images");
+const article = JSON.parse(
+    await readFile(
+        new URL("../fixtures/bang-dream.source.json", import.meta.url),
+        "utf8",
+    ),
+);
+const articleSource = await readFile(
+    new URL("../fixtures/bang-dream.wikitext", import.meta.url),
+    "utf8",
+);
+const openingParagraph = articleSource
+    .split("\n")
+    .find((line) => line.startsWith("《'''BanG Dream!"))!;
+let paragraph = openingParagraph;
+while (/\{\{[^{}]*\}\}/u.test(paragraph))
+    paragraph = paragraph.replace(/\{\{[^{}]*\}\}/gu, "");
+paragraph = paragraph
+    .replace(
+        /\[\[([^\]\n|]+)(?:\|([^\]\n]+))?\]\]/gu,
+        (_match, title, label) => label ?? title,
+    )
+    .replaceAll("'''", "")
+    .replace(/（\s*）/gu, "");
+const escapeHtml = (text: string) =>
+    text
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+const articleHtml =
+    "<h1>" +
+    escapeHtml(article.title) +
+    "</h1><p>" +
+    escapeHtml(paragraph) +
+    '</p><h2>條目原始碼節錄</h2><pre style="white-space:pre-wrap">' +
+    escapeHtml(articleSource.split("\n").slice(8, 24).join("\n")) +
+    "</pre>";
+// These banners demonstrate the review workflow; they are not the live talk page.
 const lead = [
     "{{WikiProject banner shell|class=C|vital=yes|",
-    "{{WikiProject Video games|importance=High|Pokemon=yes|NINTENDO=y|NINTENDO-importance=|b1=no|b2=no|b3=no|b4=no|b5=yes|b6=yes}}",
+    "{{WikiProject Video games|importance=High|Nintendo=yes|Nintendo-importance=Mid|b1=no|b2=no|b3=no|b4=no|b5=yes|b6=yes}}",
     "{{ACG專題|importance=high}}",
     "{{WikiProject Japan|importance=mid}}",
     "}}",
@@ -32,7 +78,7 @@ test("documentation: assessment controls and reviewed source at 1024px", async (
     const dialog = await openAssessor(page, {
         expired: true,
         lead,
-        pageTitle: "宝可梦系列",
+        pageTitle: article.title,
     });
     await chooseOption(page, "Shared class", "B");
     await expect(dialog).toBeVisible();
@@ -57,11 +103,9 @@ test("documentation: assessment controls and reviewed source at 1024px", async (
 test("documentation: category assessment at 1024px", async ({ page }) => {
     await mkdir(directory, { recursive: true });
     const dialog = await openCategoryAssessor(page, {
-        categoryMembers: ["Example game", "Another game"],
-        articleHtml: {
-            "Example game":
-                "<h2>Example game</h2><p>Example game is a role-playing video game. Explore its world, complete quests, and guide a team of characters through the story.</p><h3>Gameplay</h3><p>The player controls a party and chooses actions during turn-based battles. Exploring towns and talking to characters unlocks new areas.</p><h3>Development</h3><p>The game was developed for a home console and later released on additional platforms.</p>",
-        },
+        categoryMembers: [article.title],
+        articleHtml: { [article.title]: articleHtml },
+        lead,
     });
     await expect(dialog.locator("iframe")).toBeVisible();
     await expect(
@@ -70,7 +114,7 @@ test("documentation: category assessment at 1024px", async ({ page }) => {
     await expect(
         page
             .frameLocator("iframe")
-            .getByRole("heading", { name: "Gameplay", exact: true }),
+            .getByRole("heading", { name: "條目原始碼節錄", exact: true }),
     ).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await page.screenshot({

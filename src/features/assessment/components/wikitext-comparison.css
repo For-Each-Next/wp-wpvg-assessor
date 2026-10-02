@@ -1,3 +1,11 @@
+/**
+ * @file src/features/assessment/components/wikitext-comparison.css
+ * Purpose: src / features / assessment / components / wikitext comparison module.
+ *
+ * Table of contents:
+ * 1. Styles and responsive rules
+ */
+
 .avgp-comparison {
     border: var(--border-width-base, 1px) solid
         var(--border-color-muted, #dadde3);

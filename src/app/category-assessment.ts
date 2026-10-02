@@ -1,4 +1,18 @@
-/** Coordinates category preloads, background saves, and failed draft recovery. */
+/**
+ * @file src/app/category-assessment.ts
+ * Purpose: Coordinates category preloads, background saves, and failed draft recovery.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. CategoryAssessmentOperations
+ * 4. createCategoryAssessmentWorkflow
+ * 5. FailedAssessment
+ * 6. createRecoveryCoordinator
+ * 7. createSession
+ * 8. capturePage
+ * 9. normalizeSubject
+ */
 
 import type {
     CategoryAssessmentPage,

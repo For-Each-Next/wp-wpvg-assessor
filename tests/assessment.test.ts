@@ -1,5 +1,10 @@
 /**
- * Characterizes talk-page assessment transformations.
+ * @file tests/assessment.test.ts
+ * Purpose: Characterizes talk-page assessment transformations.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Test scenarios
  */
 
 import assert from "node:assert/strict";

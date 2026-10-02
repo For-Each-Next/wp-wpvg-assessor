@@ -1,4 +1,13 @@
-/** Static WikiProject banner configuration contracts. */
+/**
+ * @file src/domain/project-types.ts
+ * Purpose: Static WikiProject banner configuration contracts.
+ *
+ * Table of contents:
+ * 1. ProjectBannerConfig
+ * 2. TaskForceConfig
+ * 3. VideoGamesProjectConfig
+ * 4. ProjectConfig
+ */
 
 export interface ProjectBannerConfig {
     readonly aliases: readonly string[];

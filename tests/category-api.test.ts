@@ -1,4 +1,13 @@
-/** Offline checks for category read-only API parameters and response validation. */
+/**
+ * @file tests/category-api.test.ts
+ * Purpose: Offline checks for category read-only API parameters and response validation.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. Test scenarios
+ * 4. createApi
+ */
 
 import assert from "node:assert/strict";
 import test from "node:test";

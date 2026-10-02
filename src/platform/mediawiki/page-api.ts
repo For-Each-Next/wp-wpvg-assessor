@@ -1,5 +1,35 @@
 /**
- * Handles MediaWiki API calls for talk assessment.
+ * @file src/platform/mediawiki/page-api.ts
+ * Purpose: Handles MediaWiki API calls for talk assessment.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. PageApiContext
+ * 4. PageApi
+ * 5. createPageApi
+ * 6. fetchPageText
+ * 7. decodePageTextResponse
+ * 8. fetchSubjectPageInfo
+ * 9. fetchPageInfo
+ * 10. readPageNamespace
+ * 11. fetchPageCreationTimes
+ * 12. resolveRedirectTitles
+ * 13. resolveRedirectTitle
+ * 14. mergeResolvedCreationTimes
+ * 15. fetchCurrentPageText
+ * 16. parseRedirectTarget
+ * 17. fetchRevisionCreationTimes
+ * 18. readCachedCreationTimes
+ * 19. fetchUncachedCreationTimes
+ * 20. mergeCreationTimeBatch
+ * 21. fetchRevisionCreationTimeBatch
+ * 22. fetchIndividualCreationTimes
+ * 23. fetchRevisionCreationTimeBatchUnsafe
+ * 24. parseRevisionCreationTimes
+ * 25. groupTitlesByNamespace
+ * 26. getNamespaceGroupKey
+ * 27. getCreationTimeForTitle
  */
 
 import type { PageSnapshot, SubjectPageInfo } from "../../domain/types.ts";
@@ -654,10 +684,7 @@ function parseRevisionCreationTimes(response: unknown): Map<string, Date> {
     const query = asRecord(responseRecord?.query);
     const pages = query?.pages;
     const creationTimes = new Map<string, Date>();
-    const pageRecord = asRecord(pages);
-    const pageList = Array.isArray(pages)
-        ? pages
-        : Object.values(pageRecord ?? {});
+    const pageList = Array.isArray(pages) ? pages : [];
 
     for (const pageValue of pageList) {
         const page = asRecord(pageValue);

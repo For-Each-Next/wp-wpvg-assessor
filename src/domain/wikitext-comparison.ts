@@ -1,4 +1,45 @@
-/** Structured line and word differences for reviewable wikitext. */
+/**
+ * @file src/domain/wikitext-comparison.ts
+ * Purpose: Structured line and word differences for reviewable wikitext.
+ *
+ * Table of contents:
+ * 1. WikitextDiffLineKind
+ * 2. WikitextDiffRowKind
+ * 3. WikitextDiffSegmentKind
+ * 4. WikitextDiffSegment
+ * 5. WikitextDiffLine
+ * 6. WikitextDiffRow
+ * 7. WikitextComparison
+ * 8. WikitextComparisonOptions
+ * 9. SequenceOperationKind
+ * 10. SequenceOperation
+ * 11. InlineComparison
+ * 12. ChangedLinePair
+ * 13. compareWikitext
+ * 14. normalizeContextLines
+ * 15. compareSequences
+ * 16. compareChangedSequences
+ * 17. buildLcsLengths
+ * 18. appendRemainingOperations
+ * 19. countCommonPrefix
+ * 20. countCommonSuffix
+ * 21. buildDiffRows
+ * 22. appendChangedRows
+ * 23. alignChangedLines
+ * 24. buildLineAlignmentScores
+ * 25. getLineSimilarity
+ * 26. createContextRow
+ * 27. createChangedRow
+ * 28. createOneSidedLine
+ * 29. createDiffLine
+ * 30. compareInlineText
+ * 31. segmentWords
+ * 32. appendSegment
+ * 33. isChangedRow
+ * 34. limitContextRows
+ * 35. collectKeptRows
+ * 36. createOmittedRow
+ */
 
 type WikitextDiffLineKind = "added" | "context" | "empty" | "removed";
 type WikitextDiffRowKind = "line" | "omitted";

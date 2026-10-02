@@ -1,4 +1,19 @@
-/** Build standalone MediaWiki gadget and userscript artifacts. */
+/**
+ * @file scripts/build.mjs
+ * Purpose: Build standalone MediaWiki gadget and userscript artifacts.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. cssText
+ * 4. vueTemplate
+ * 5. bundleSource
+ * 6. Initialization and execution
+ * 7. wrapReadableProgram
+ * 8. artifactHeader
+ * 9. mediaWikiArtifact
+ * 10. userscriptArtifact
+ */
 
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -166,15 +181,27 @@ function wrapReadableProgram(source) {
     ].join("\n");
 }
 
-function mediaWikiArtifact(program) {
+function artifactHeader() {
     return [
         "/**",
-        ` * ${manifest.description}`,
+        " * WPVG Assessor",
+        " *",
+        ` * Purpose: ${manifest.description}`,
         " *",
         ` * @name ${manifest.name}`,
         ` * @version ${manifest.version}`,
         ` * @license ${manifest.license}`,
+        " *",
+        " * Table of contents:",
+        " * 1. Metadata and license notices",
+        " * 2. MediaWiki bootstrap and browser program",
         " */",
+    ].join("\n");
+}
+
+function mediaWikiArtifact(program) {
+    return [
+        artifactHeader(),
         "",
         "//<nowiki>",
         program,
@@ -192,9 +219,14 @@ function userscriptArtifact(program) {
         `// @description  ${manifest.description}`,
         `// @license      ${manifest.license}`,
         "// @match        https://zh.wikipedia.org/*",
+        "// @homepageURL  https://github.com/For-Each-Next/wp-wpvg-assessor",
+        "// @downloadURL  https://github.com/For-Each-Next/wp-wpvg-assessor/releases/latest/download/wpvg_assessor.user.js",
+        "// @updateURL    https://github.com/For-Each-Next/wp-wpvg-assessor/releases/latest/download/wpvg_assessor.user.js",
         "// @grant        none",
         "// @run-at       document-end",
         "// ==/UserScript==",
+        "",
+        artifactHeader(),
         "",
         program,
         "",

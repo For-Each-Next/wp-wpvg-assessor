@@ -1,3 +1,20 @@
+/**
+ * @file tests/ui/fixtures.ts
+ * Purpose: tests / ui / fixtures module.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. FixtureOptions
+ * 3. PostedEdit
+ * 4. Constants and state
+ * 5. Exports
+ * 6. openCategoryAssessor
+ * 7. openAssessor
+ * 8. getPosts
+ * 9. navigateAssessor
+ * 10. chooseOption
+ */
+
 import { expect, test as base } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
@@ -87,7 +104,7 @@ export async function openCategoryAssessor(
     );
     await page.goto("/tests/ui/index.html");
     await page
-        .getByRole("link", { name: "Batch assess articles", exact: true })
+        .getByRole("button", { name: "Batch assess articles", exact: true })
         .click();
     return page.getByRole("dialog", {
         name: "Batch assess articles",
@@ -101,7 +118,7 @@ export async function openAssessor(page: Page, options: FixtureOptions = {}) {
     }, options);
     await page.goto("/tests/ui/index.html");
     await page
-        .getByRole("link", { name: "VG Page Assessor", exact: true })
+        .getByRole("button", { name: "VG Page Assessor", exact: true })
         .click();
     await expect(
         page.getByRole("textbox", {
@@ -126,7 +143,7 @@ export async function getPosts(page: Page): Promise<PostedEdit[]> {
 export async function navigateAssessor(page: Page, title: string) {
     await page.goto(`/tests/ui/index.html?page=${encodeURIComponent(title)}`);
     await page
-        .getByRole("link", { name: "VG Page Assessor", exact: true })
+        .getByRole("button", { name: "VG Page Assessor", exact: true })
         .click();
     await expect(
         page.getByRole("textbox", {

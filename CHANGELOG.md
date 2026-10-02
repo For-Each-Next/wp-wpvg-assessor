@@ -1,5 +1,25 @@
 # Changelog
 
+<!-- toc:start -->
+
+## Contents
+
+- [\[0.2.3\] - 2026-10-03](#023---2026-10-03)
+- [\[0.2.2\] - 2026-10-02](#022---2026-10-02)
+- [0.2.1 - 2026-10-01](#021---2026-10-01)
+- [0.2.0 - 2026-10-01](#020---2026-10-01)
+- [0.1.1 - 2026-10-01](#011---2026-10-01)
+- [0.1.0 - 2026-10-01](#010---2026-10-01)
+
+<!-- toc:end -->
+
+## [0.2.3] - 2026-10-03
+
+- Use native Codex buttons for dialog actions and current formatversion 2
+  MediaWiki responses, removing obsolete keyed-page and revision payloads.
+- Publish matching readable userscript and minified gadget headers, with
+  user guides in three languages and BanG Dream article-based screenshots.
+
 ## [0.2.2] - 2026-10-02
 
 - Harmonized contributor guidance, capability ownership and file naming, compact

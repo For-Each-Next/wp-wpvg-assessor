@@ -1,4 +1,13 @@
-/** Reads category members and article previews without performing edits. */
+/**
+ * @file src/platform/mediawiki/category-api.ts
+ * Purpose: Reads category members and article previews without performing edits.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. CategoryApi
+ * 4. createCategoryApi
+ */
 
 import type { CategoryMemberBatch } from "../../app/category-contracts.ts";
 import type { Logger } from "../../shared/logging.ts";

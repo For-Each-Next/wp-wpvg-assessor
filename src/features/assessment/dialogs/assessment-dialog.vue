@@ -1,3 +1,11 @@
+<!--
+@file src/features/assessment/dialogs/assessment-dialog.vue
+Purpose: src / features / assessment / dialogs / assessment dialog module.
+
+Table of contents:
+1. Template
+-->
+
 <template>
     <cdx-dialog
         v-model:open="open"

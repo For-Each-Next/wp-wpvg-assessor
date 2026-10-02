@@ -1,6 +1,6 @@
 {
     "name": "wpvg-assessor",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "description": "A gadget for WikiProject Video games on Chinese Wikipedia to assess articles and register new pages.",
     "private": true,
     "license": "CC0-1.0",
@@ -8,7 +8,7 @@
     "browser": "./src/app/browser.ts",
     "scripts": {
         "build": "node scripts/build.mjs",
-        "check": "npm run format:check && npm run lint && npm run check:types && npm run check:unused",
+        "check": "npm run docs:check && npm run format:check && npm run lint && npm run check:types && npm run check:unused",
         "check:types": "vue-tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.tests.json",
         "check:unused": "knip",
         "format": "prettier --write . \"!package-lock.json\"",
@@ -17,7 +17,9 @@
         "test": "node --test tests/*.test.ts",
         "test:ui": "npm run build && node scripts/test-ui.mjs",
         "verify": "npm run check && npm test && npm run test:ui",
-        "screenshots": "DOCUMENTATION_SCREENSHOTS=1 npm run test:ui -- screenshots.spec.ts"
+        "screenshots": "DOCUMENTATION_SCREENSHOTS=1 npm run test:ui -- screenshots.spec.ts",
+        "docs:write": "node scripts/file-docs.mjs",
+        "docs:check": "node scripts/file-docs.mjs --check"
     },
     "devDependencies": {
         "@eslint/js": "10.0.1",

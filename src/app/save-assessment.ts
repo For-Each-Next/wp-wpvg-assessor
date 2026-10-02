@@ -1,4 +1,13 @@
-/** Saves an exact reviewed assessment through the conflict-safe talk workflow. */
+/**
+ * @file src/app/save-assessment.ts
+ * Purpose: Saves an exact reviewed assessment through the conflict-safe talk workflow.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. ReviewedAssessmentSaveOperations
+ * 4. createReviewedAssessmentSaveWorkflow
+ */
 
 import {
     getTalkPageTopSection,

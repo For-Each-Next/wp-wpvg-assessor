@@ -1,4 +1,12 @@
-/** Category actions capture one exact background save and keep navigation independent. */
+/**
+ * @file tests/category-dialog.test.ts
+ * Purpose: Category actions capture one exact background save and keep navigation independent.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Test scenarios
+ * 3. createFixture
+ */
 
 import assert from "node:assert/strict";
 import test from "node:test";

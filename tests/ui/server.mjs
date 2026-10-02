@@ -1,4 +1,13 @@
-/** Local-only host for the built gadget and its real Vue/Codex dependencies. */
+/**
+ * @file tests/ui/server.mjs
+ * Purpose: Local-only host for the built gadget and its real Vue/Codex dependencies.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. Test scenarios
+ */
+
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";

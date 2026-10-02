@@ -1,5 +1,12 @@
 /**
- * Tests VG Page Assessor locale catalogs and project-option labels.
+ * @file tests/i18n.test.ts
+ * Purpose: Tests VG Page Assessor locale catalogs and project-option labels.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. Test scenarios
+ * 4. createMessages
  */
 
 import assert from "node:assert/strict";

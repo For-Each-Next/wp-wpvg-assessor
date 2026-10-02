@@ -1,5 +1,13 @@
 /**
- * VG Page Assessor locale registry.
+ * @file src/i18n/index.ts
+ * Purpose: VG Page Assessor locale registry.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. MessageId
+ * 4. PageAssessorMessages
+ * 5. buildNewPageListSummary
  */
 
 import * as i18n from "../shared/i18n.ts";

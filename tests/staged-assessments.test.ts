@@ -1,4 +1,17 @@
-/** Offline tests for retained reviewed drafts and one registration transaction. */
+/**
+ * @file tests/staged-assessments.test.ts
+ * Purpose: Offline tests for retained reviewed drafts and one registration transaction.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. Test scenarios
+ * 4. createFixture
+ * 5. createSession
+ * 6. createListSnapshot
+ * 7. createState
+ * 8. createReview
+ */
 
 import assert from "node:assert/strict";
 import test from "node:test";

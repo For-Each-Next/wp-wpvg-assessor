@@ -17,6 +17,17 @@ the assessment form from opening. Unreadable revisions on existing pages
 still stop loading, and the current subject must have readable source and a
 creation date.
 
+<!-- toc:start -->
+
+## Contents
+
+- [Assessment and review](#assessment-and-review)
+- [Background drafts and batch submission](#background-drafts-and-batch-submission)
+- [Category assessment](#category-assessment)
+- [Conflicts and failures](#conflicts-and-failures)
+
+<!-- toc:end -->
+
 ## Assessment and review
 
 ![Assessment choices at a 1024px viewport](images/screenshot-01.png)

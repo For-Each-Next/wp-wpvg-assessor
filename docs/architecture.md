@@ -1,6 +1,17 @@
 # Architecture
 
-**Required UI standard:** follow the [Wikimedia Codex types and order of buttons](https://doc.wikimedia.org/codex/latest/style-guide/using-links-and-buttons.html#types-and-order-of-buttons). Use one primary progressive action per group, normal secondary actions, and quiet tertiary actions. Cancellation is neutral; reserve destructive actions for irreversible changes. Put the primary action last in horizontal flows (respecting LTR/RTL reading direction) and first when stacked. Dialog footers align to the inline end; separate ordinary buttons with `spacing-75` (12px). Codex ButtonGroup supplies its own spacing. Keep visual and keyboard order aligned.
+<!-- toc:start -->
+
+## Contents
+
+- [Scope](#scope)
+- [Folder names and ownership](#folder-names-and-ownership)
+- [Dependencies and startup](#dependencies-and-startup)
+- [Build and verification](#build-and-verification)
+
+<!-- toc:end -->
+
+## Scope
 
 WPVG Assessor separates application workflows, pure rules, host integration,
 and interface components. It uses ordinary functions, explicit TypeScript
@@ -31,7 +42,7 @@ TypeScript behavior and scoped CSS. Add modules when a capability needs an
 owner; keep domain rules out of generic utility folders. Installation artifact
 names retain their existing underscores for compatibility.
 
-## Ownership and dependencies
+## Dependencies and startup
 
 `src/app/browser.ts` starts `src/app/main.ts`. The composition root creates
 MediaWiki adapters, a scoped logger, a notification port, and dialog
@@ -53,6 +64,8 @@ workflows, then supplies them to the assessment feature.
   dependencies. `project-config.ts` holds the Chinese Wikipedia banner rules.
 - `platform/mediawiki/` validates API responses, reads page context and
   language, loads Codex, and performs timestamp-protected writes.
+  Requests and decoders use formatversion 2 page arrays and main-slot content;
+  obsolete keyed pages and star-key content are rejected before preparing edits.
   Category reads follow API continuation and resolve subject and talk titles
   for article and talk-page members. Article preview reads supply parsed HTML
   to a sandboxed frame in the batch interface.
@@ -90,6 +103,9 @@ workflows, then supplies them to the assessment feature.
 Imports point toward pure rules and contracts. Domain and shared code do not
 import startup, UI, or platform code. Platform code does not import product
 UI or catalogs. Features receive workflows through injected contracts.
+
+Page-tool commands are native Codex buttons, with keyboard activation and focus
+restoration. See [UI guidelines](ui-guidelines.md) for the interface contract.
 
 `src/index.ts` deliberately exposes deterministic assessment, registration,
 and comparison operations without triggering browser startup.

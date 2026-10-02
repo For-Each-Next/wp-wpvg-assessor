@@ -1,5 +1,80 @@
 /**
- * Builds and updates talk-page assessment banner wikitext.
+ * @file src/domain/assessment.ts
+ * Purpose: Builds and updates talk-page assessment banner wikitext.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. createDefaultAssessment
+ * 4. parseAssessment
+ * 5. readExistingAssessment
+ * 6. collectExistingProjectBanners
+ * 7. findProjectBanner
+ * 8. findExistingOtherProjectOptions
+ * 9. isConfiguredProjectName
+ * 10. isOtherProjectName
+ * 11. readExistingProjectLabel
+ * 12. buildExistingProjectId
+ * 13. isExistingOtherProjectSelected
+ * 14. applyExistingClass
+ * 15. applyExistingVideoGames
+ * 16. applyExistingMaintenance
+ * 17. applyExistingOtherProjects
+ * 18. getExistingOtherProjectOptions
+ * 19. updateTalkPageAssessment
+ * 20. updateTalkPageTopSection
+ * 21. replaceManagedTopTemplates
+ * 22. buildAssessmentBanners
+ * 23. replaceExistingVideoGamesBanners
+ * 24. buildSelectedOtherProjectBanners
+ * 25. previewTalkPageTopSection
+ * 26. getTalkPageTopSection
+ * 27. hasDykInviteAtTop
+ * 28. isEmptyImportanceOnlyChange
+ * 29. shouldRegisterByDefault
+ * 30. replaceLeadingManagedTemplates
+ * 31. isManagedTemplate
+ * 32. buildManagedTemplatePatterns
+ * 33. buildTemplatePattern
+ * 34. normalizeTemplateName
+ * 35. escapeRegExp
+ * 36. TemplateToken
+ * 37. readLeadingTemplate
+ * 38. readLeadingTemplates
+ * 39. extractBannersForAssessmentShell
+ * 40. appendNestedAssessmentBanners
+ * 41. appendAssessmentContent
+ * 42. readNestedBannersFromShell
+ * 43. extractBannerShellBannerBody
+ * 44. isBannerShellBodyParameter
+ * 45. isPositionalParameter
+ * 46. splitTemplateParts
+ * 47. findTopLevelEquals
+ * 48. readTemplateParameter
+ * 49. normalizeParameterName
+ * 50. readBooleanParameter
+ * 51. readTaskForceParameter
+ * 52. normalizeAssessmentClass
+ * 53. readAssessmentImportance
+ * 54. readAssessmentChoice
+ * 55. matchesProject
+ * 56. isBannerShellName
+ * 57. matchesTemplateName
+ * 58. matchesAnyPattern
+ * 59. buildBannerShellPatterns
+ * 60. findTemplateEnd
+ * 61. advanceTemplateBraces
+ * 62. skipOpaqueWikitext
+ * 63. skipLeadingWhitespaceAndComments
+ * 64. skipWhitespace
+ * 65. buildVideoGamesBanner
+ * 66. updateExistingVideoGamesBanner
+ * 67. getSelectedMaintenanceParams
+ * 68. getMaintenanceSelections
+ * 69. buildSimpleProjectBanner
+ * 70. buildBannerShell
+ * 71. getTopSection
+ * 72. removeEmptyImportanceParameters
  */
 
 import { stripNamespacePrefix } from "./wiki-titles.ts";

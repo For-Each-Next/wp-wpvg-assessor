@@ -1,4 +1,13 @@
-/** Loading dialog shown while complete initial state is prepared. */
+/**
+ * @file src/features/assessment/dialogs/loading-dialog.ts
+ * Purpose: Loading dialog shown while complete initial state is prepared.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. LoadingBindings
+ * 4. createLoadingDialogComponent
+ */
 
 import { interfaceLocale, msg } from "../../../i18n/index.ts";
 import type { VueModule, VueRef } from "../../../platform/mediawiki/codex.ts";

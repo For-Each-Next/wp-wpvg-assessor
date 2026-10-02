@@ -1,3 +1,13 @@
+/**
+ * @file tests/ui/assessment.spec.ts
+ * Purpose: tests / ui / assessment.spec module.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. Test scenarios
+ */
+
 import {
     chooseOption,
     expect,
@@ -776,7 +786,7 @@ test("opening failure reports a notification and removes the loading dialog", as
     });
     await page.goto("/tests/ui/index.html");
     await page
-        .getByRole("link", { name: "VG Page Assessor", exact: true })
+        .getByRole("button", { name: "VG Page Assessor", exact: true })
         .click();
     await expect(page.locator("#notifications")).toContainText(
         "The fixture is unavailable",
@@ -857,7 +867,7 @@ test("cancelled loading cannot mount a stale dialog and the tool can reopen", as
         (globalThis as any).__fixtureOptions = { holdLoad: true };
     });
     await page.goto("/tests/ui/index.html");
-    const link = page.getByRole("link", {
+    const link = page.getByRole("button", {
         name: "VG Page Assessor",
         exact: true,
     });

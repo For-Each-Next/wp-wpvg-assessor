@@ -1,5 +1,54 @@
 /**
- * Parses and prepares Video games new-page-list registrations.
+ * @file src/domain/new-page-list.ts
+ * Purpose: Parses and prepares Video games new-page-list registrations.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. RegistrationGroup
+ * 4. ParsedSubgroup
+ * 5. DateBlock
+ * 6. YearSection
+ * 7. RegistrationEntry
+ * 8. PreparedRegistrationEntry
+ * 9. GroupEntries
+ * 10. prepareNewPageListRegistration
+ * 11. RegistrationContext
+ * 12. createRegistrationContext
+ * 13. prepareRegistrationResult
+ * 14. buildNewRegistration
+ * 15. isRegistrationDateEligible
+ * 16. buildIneligibleRegistration
+ * 17. buildExistingRegistration
+ * 18. getTitlesForDate
+ * 19. parseYearSections
+ * 20. parseDateBlocks
+ * 21. parseDateBlockLine
+ * 22. addEntry
+ * 23. updateYearSection
+ * 24. findMatchingDateLine
+ * 25. findDateBlockInsertIndex
+ * 26. findTrailingWhitespaceIndex
+ * 27. updateExistingDateBlock
+ * 28. removeNoNewEntryPlaceholder
+ * 29. readDateSubgroups
+ * 30. addAndSortEntries
+ * 31. compareEntriesByCreationTime
+ * 32. findRegisteredEntry
+ * 33. findEarliestRetainedDate
+ * 34. findYearRange
+ * 35. insertYearSection
+ * 36. buildDateBlock
+ * 37. findDateBlockEnd
+ * 38. parseEntries
+ * 39. parseDateEntries
+ * 40. removeNoNewEntrySegments
+ * 41. normalizeGroupLabel
+ * 42. getNamespaceGroup
+ * 43. buildVgcCall
+ * 44. extractVgcTitle
+ * 45. normalizeTitle
+ * 46. startOfUtcDay
  */
 
 import type { ExistingRegistration, RegistrationResult } from "./types.ts";

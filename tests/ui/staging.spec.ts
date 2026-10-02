@@ -1,3 +1,13 @@
+/**
+ * @file tests/ui/staging.spec.ts
+ * Purpose: tests / ui / staging.spec module.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. Test scenarios
+ */
+
 import {
     chooseOption,
     expect,
@@ -35,7 +45,7 @@ const stage = (page: Page) =>
 const unstage = (page: Page) =>
     page.getByRole("button", { name: "Unstage", exact: true });
 const assessorLink = (page: Page) =>
-    page.getByRole("link", { name: "VG Page Assessor", exact: true });
+    page.getByRole("button", { name: "VG Page Assessor", exact: true });
 const queuedNotice = (page: Page) =>
     page.getByText("Added to queue. You can submit it from any browser tab.", {
         exact: true,

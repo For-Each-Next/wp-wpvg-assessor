@@ -1,4 +1,15 @@
-/** Sequential article reading with background saves and later failure recovery. */
+/**
+ * @file src/features/assessment/dialogs/category-dialog.ts
+ * Purpose: Sequential article reading with background saves and later failure recovery.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. CategoryDialogOptions
+ * 4. createCategoryDialogComponent
+ * 5. createCategoryDialogBindings
+ * 6. createArticleDocument
+ */
 
 import type {
     CategoryAssessmentPage,

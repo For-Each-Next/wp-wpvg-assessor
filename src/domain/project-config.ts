@@ -1,3 +1,12 @@
+/**
+ * @file src/domain/project-config.ts
+ * Purpose: src / domain / project config module.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Exports
+ */
+
 import type { ProjectConfig } from "./project-types.ts";
 
 export default {

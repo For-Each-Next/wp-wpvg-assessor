@@ -1,4 +1,15 @@
-/** Article navigation and background reviewed saves for category assessment. */
+/**
+ * @file src/app/category-contracts.ts
+ * Purpose: Article navigation and background reviewed saves for category assessment.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. CategoryArticleStyles
+ * 3. CategoryMemberBatch
+ * 4. CategoryAssessmentPage
+ * 5. CategoryAssessmentSession
+ * 6. CategoryAssessmentWorkflow
+ */
 
 import type {
     AssessmentSaveReview,

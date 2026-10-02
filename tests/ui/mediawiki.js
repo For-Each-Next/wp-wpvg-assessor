@@ -1,4 +1,11 @@
-/** In-memory MediaWiki boundary. The tests exercise the production bundle. */
+/**
+ * @file tests/ui/mediawiki.js
+ * Purpose: In-memory MediaWiki boundary. The tests exercise the production bundle.
+ *
+ * Table of contents:
+ * 1. Test scenarios
+ */
+
 (() => {
     const options = globalThis.__fixtureOptions ?? {};
     const listTitle = "WikiProject:电子游戏/新进条目";
@@ -69,6 +76,7 @@
     persistPages();
     globalThis.__fixture = fixture;
     document.documentElement.lang = options.locale ?? "en";
+    document.querySelector("h1").textContent = subjectTitle;
     if (options.articleCss != null) {
         const style = document.createElement("style");
         style.setAttribute("data-mw-deduplicate", "fixture.article.styles");
@@ -354,9 +362,11 @@
                 const link = document.createElement("a");
                 link.href = href;
                 link.textContent = text;
-                link.id = id;
-                document.getElementById(portlet).append(link);
-                return link;
+                const item = document.createElement("li");
+                item.id = id;
+                item.append(link);
+                document.getElementById(portlet).append(item);
+                return item;
             },
         },
     };

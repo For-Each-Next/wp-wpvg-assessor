@@ -1,5 +1,12 @@
 /**
- * Performs one timestamp-protected talk-page edit.
+ * @file src/platform/mediawiki/talk-page-api.ts
+ * Purpose: Performs one timestamp-protected talk-page edit.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. TalkPageApi
+ * 3. createTalkPageApi
+ * 4. createTalkEditParams
  */
 
 import type { PageSnapshot, PreparedTalkEdit } from "../../domain/types.ts";

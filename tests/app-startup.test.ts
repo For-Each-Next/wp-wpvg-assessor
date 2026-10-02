@@ -1,4 +1,15 @@
-/** Startup error reporting at the page-assessor UI boundary. */
+/**
+ * @file tests/app-startup.test.ts
+ * Purpose: Startup error reporting at the page-assessor UI boundary.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. StartupFailureFixture
+ * 3. Test scenarios
+ * 4. reportStartupFailures
+ * 5. verifyStartupFailure
+ * 6. createLogOutput
+ */
 
 import assert from "node:assert/strict";
 import test from "node:test";

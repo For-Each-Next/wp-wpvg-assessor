@@ -1,4 +1,37 @@
-/** Structured, privacy-conscious console logging for every gadget. */
+/**
+ * @file src/shared/logging.ts
+ * Purpose: Structured, privacy-conscious console logging for every gadget.
+ *
+ * Table of contents:
+ * 1. LogLevel
+ * 2. ActiveLogLevel
+ * 3. LogDetails
+ * 4. StopTimer
+ * 5. Logger
+ * 6. LoggingConfig
+ * 7. LogOutput
+ * 8. LoggerOptions
+ * 9. LoggerState
+ * 10. Constants and state
+ * 11. createLogger
+ * 12. createScopedLogger
+ * 13. createTimer
+ * 14. emit
+ * 15. resolveLevel
+ * 16. isLogLevel
+ * 17. isLevelEnabled
+ * 18. buildPrefix
+ * 19. normalizeIdentifier
+ * 20. normalizeEvent
+ * 21. sanitize
+ * 22. sanitizeValue
+ * 23. isPrivateKey
+ * 24. sanitizeString
+ * 25. sanitizeError
+ * 26. sanitizeObject
+ * 27. sanitizeArray
+ * 28. sanitizeRecord
+ */
 
 export type LogLevel = "silent" | "error" | "warn" | "info" | "debug";
 

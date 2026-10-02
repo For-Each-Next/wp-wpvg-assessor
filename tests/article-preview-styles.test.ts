@@ -1,4 +1,13 @@
-/** Host stylesheet serialization keeps article previews styled and isolated. */
+/**
+ * @file tests/article-preview-styles.test.ts
+ * Purpose: Host stylesheet serialization keeps article previews styled and isolated.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Test scenarios
+ * 3. createDocument
+ * 4. element
+ */
 
 import assert from "node:assert/strict";
 import test from "node:test";

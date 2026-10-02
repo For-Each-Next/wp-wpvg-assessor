@@ -1,4 +1,14 @@
-/** Copies the host wiki's loaded CSS into an isolated article reading frame. */
+/**
+ * @file src/platform/browser/article-preview-styles.ts
+ * Purpose: Copies the host wiki's loaded CSS into an isolated article reading frame.
+ *
+ * Table of contents:
+ * 1. ArticlePreviewStyles
+ * 2. getArticlePreviewStyles
+ * 3. isHttpUrl
+ * 4. escapeAttribute
+ * 5. escapeStyleText
+ */
 
 export interface ArticlePreviewStyles {
     /** Safely serialized stylesheet links and inline style elements. */

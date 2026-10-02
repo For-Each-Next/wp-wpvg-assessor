@@ -1,5 +1,14 @@
 /**
- * Minimal MediaWiki Vue and Codex contracts used by VG Page Assessor.
+ * @file src/platform/mediawiki/codex.ts
+ * Purpose: Minimal MediaWiki Vue and Codex contracts used by VG Page Assessor.
+ *
+ * Table of contents:
+ * 1. VueRef
+ * 2. VueModule
+ * 3. VueApp
+ * 4. CodexComponents
+ * 5. ResourceLoaderRequire
+ * 6. registerPageAssessorComponents
  */
 
 export interface VueRef<T> {

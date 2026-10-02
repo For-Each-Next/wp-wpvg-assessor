@@ -1,5 +1,17 @@
 /**
- * Localizes the configured assessment options for presentation.
+ * @file src/features/assessment/assessment-options.ts
+ * Purpose: Localizes the configured assessment options for presentation.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. LabelledAssessmentOption
+ * 3. LabelledAssessmentValue
+ * 4. OtherProjectId
+ * 5. TaskForceId
+ * 6. Constants and state
+ * 7. includeAssessmentValue
+ * 8. localizeOptions
+ * 9. localizeValues
  */
 
 import projectConfig from "../../domain/project-config.ts";

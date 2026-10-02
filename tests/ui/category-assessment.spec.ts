@@ -1,3 +1,17 @@
+/**
+ * @file tests/ui/category-assessment.spec.ts
+ * Purpose: tests / ui / category assessment.spec module.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. Test scenarios
+ * 4. reviewSource
+ * 5. queueSnapshot
+ * 6. previewedTitles
+ * 7. expectOnlyCategoryReads
+ */
+
 import {
     expect,
     getPosts,
@@ -186,17 +200,23 @@ test("ordinary pages and other categories keep the ordinary assessor link", asyn
 }) => {
     await page.goto("/tests/ui/index.html");
     await expect(
-        page.getByRole("link", { name: "VG Page Assessor", exact: true }),
+        page.getByRole("button", { name: "VG Page Assessor", exact: true }),
     ).toBeVisible();
     await expect(
-        page.getByRole("link", { name: "Batch assess articles", exact: true }),
+        page.getByRole("button", {
+            name: "Batch assess articles",
+            exact: true,
+        }),
     ).toHaveCount(0);
     await page.goto("/tests/ui/index.html?page=Category:Other%20category");
     await expect(
-        page.getByRole("link", { name: "VG Page Assessor", exact: true }),
+        page.getByRole("button", { name: "VG Page Assessor", exact: true }),
     ).toBeVisible();
     await expect(
-        page.getByRole("link", { name: "Batch assess articles", exact: true }),
+        page.getByRole("button", {
+            name: "Batch assess articles",
+            exact: true,
+        }),
     ).toHaveCount(0);
 });
 
@@ -637,10 +657,7 @@ for (const hold of ["holdLoad", "holdArticle"] as const) {
             else fixture.releaseArticle();
         }, hold);
         await page
-            .getByRole("link", {
-                name: "Batch assess articles",
-                exact: true,
-            })
+            .getByRole("button", { name: "Batch assess articles", exact: true })
             .click();
         await expect(
             articlePreview(page).getByRole("heading", {

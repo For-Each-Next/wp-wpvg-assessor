@@ -1,5 +1,16 @@
 /**
- * Reads and writes the WikiProject Video games new-page list.
+ * @file src/platform/mediawiki/new-page-list-api.ts
+ * Purpose: Reads and writes the WikiProject Video games new-page list.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. NewPageListApi
+ * 4. NewPageListContext
+ * 5. createNewPageListApi
+ * 6. fetchNewPageList
+ * 7. savePreparedNewPageList
+ * 8. decodeNewPageListResponse
  */
 
 import type { NewPageListSnapshot } from "../../domain/types.ts";

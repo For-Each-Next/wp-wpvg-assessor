@@ -1,4 +1,12 @@
-/** Loads assessment source without reading article metadata or registration. */
+/**
+ * @file src/app/assessment-state.ts
+ * Purpose: Loads assessment source without reading article metadata or registration.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. AssessmentStateLoaderOperations
+ * 3. createAssessmentStateLoader
+ */
 
 import { createDefaultAssessment } from "../domain/assessment.ts";
 import type { ProjectConfig } from "../domain/project-types.ts";

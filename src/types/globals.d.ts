@@ -1,5 +1,15 @@
 /**
- * Build globals and template context for VG Page Assessor.
+ * @file src/types/globals.d.ts
+ * Purpose: Build globals and template context for VG Page Assessor.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. RawTemplateContext
+ * 3. TemplateContext
+ * 4. RawCategoryContext
+ * 5. CategoryTemplateContext
+ * 6. Ambient declarations
+ * 7. Exports
  */
 
 import type * as Dialog from "../features/assessment/dialogs/assessment-dialog.ts";

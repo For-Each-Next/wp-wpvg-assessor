@@ -1,4 +1,15 @@
-/** Writes require readable snapshots and a confirmed MediaWiki edit result. */
+/**
+ * @file tests/save-safety.test.ts
+ * Purpose: Writes require readable snapshots and a confirmed MediaWiki edit result.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. responseFor
+ * 4. readablePage
+ * 5. Test scenarios
+ */
+
 import assert from "node:assert/strict";
 import test from "node:test";
 

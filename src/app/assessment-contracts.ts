@@ -1,4 +1,13 @@
-/** Talk-page assessment data shared by the assessment-only workflow and UI. */
+/**
+ * @file src/app/assessment-contracts.ts
+ * Purpose: Talk-page assessment data shared by the assessment-only workflow and UI.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. AssessmentState
+ * 3. AssessmentSaveReview
+ * 4. SaveReviewedAssessment
+ */
 
 import type { Assessment, PageSnapshot } from "../domain/types.ts";
 import type { DialogSaveOutcome } from "./dialog-contracts.ts";

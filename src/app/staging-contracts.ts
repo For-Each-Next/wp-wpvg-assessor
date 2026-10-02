@@ -1,4 +1,15 @@
-/** Contracts for background assessment drafts and reviewed batch submission. */
+/**
+ * @file src/app/staging-contracts.ts
+ * Purpose: Contracts for background assessment drafts and reviewed batch submission.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. StagedAssessment
+ * 3. AssessmentSessionData
+ * 4. AssessmentSessionStore
+ * 5. PreparedAssessmentBatch
+ * 6. AssessmentStagingWorkflow
+ */
 
 import type {
     DialogSaveOutcome,

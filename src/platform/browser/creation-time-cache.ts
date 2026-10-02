@@ -1,5 +1,15 @@
 /**
- * Stores disposable page-creation timestamps in browser local storage.
+ * @file src/platform/browser/creation-time-cache.ts
+ * Purpose: Stores disposable page-creation timestamps in browser local storage.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. CreationTimeCache
+ * 4. CreationTimeCacheStore
+ * 5. createCreationTimeCacheStore
+ * 6. normalizeCreationTimeCacheTitle
+ * 7. isCreationTimeCache
  */
 
 import type { Logger } from "../../shared/logging.ts";

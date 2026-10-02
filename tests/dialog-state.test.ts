@@ -1,5 +1,12 @@
 /**
- * Characterizes fully prepared initial dialog state.
+ * @file tests/dialog-state.test.ts
+ * Purpose: Characterizes fully prepared initial dialog state.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Test scenarios
+ * 3. createAdapters
+ * 4. createAssessmentPages
  */
 
 import assert from "node:assert/strict";

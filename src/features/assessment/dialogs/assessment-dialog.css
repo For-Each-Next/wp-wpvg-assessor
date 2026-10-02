@@ -1,3 +1,11 @@
+/**
+ * @file src/features/assessment/dialogs/assessment-dialog.css
+ * Purpose: src / features / assessment / dialogs / assessment dialog module.
+ *
+ * Table of contents:
+ * 1. Styles and responsive rules
+ */
+
 .avgp-dialog.cdx-dialog {
     max-width: 76rem;
 }

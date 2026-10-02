@@ -1,5 +1,22 @@
 /**
- * Contracts shared by composition, dialog UI, and workflows.
+ * @file src/app/dialog-contracts.ts
+ * Purpose: Contracts shared by composition, dialog UI, and workflows.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. DialogState
+ * 3. DialogPageContext
+ * 4. CreateDialogPageContext
+ * 5. RegistrationSave
+ * 6. DialogStateWorkflow
+ * 7. DialogWorkflow
+ * 8. DialogSaveReview
+ * 9. DialogSavePhase
+ * 10. DialogSaveOutcome
+ * 11. ReportDialogSavePhase
+ * 12. SaveTalkAssessment
+ * 13. SaveReviewedDialog
+ * 14. PageAssessorRuntime
  */
 
 import type {

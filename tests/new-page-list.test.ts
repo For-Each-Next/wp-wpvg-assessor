@@ -1,5 +1,11 @@
 /**
- * Characterizes pure new-page-list parsing and insertion.
+ * @file tests/new-page-list.test.ts
+ * Purpose: Characterizes pure new-page-list parsing and insertion.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. Test scenarios
  */
 
 import assert from "node:assert/strict";

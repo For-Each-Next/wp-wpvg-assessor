@@ -1,4 +1,11 @@
-/** Side-effect-free assessment and wikitext operations. */
+/**
+ * @file src/index.ts
+ * Purpose: Side-effect-free assessment and wikitext operations.
+ *
+ * Table of contents:
+ * 1. Exports
+ */
+
 export {
     createDefaultAssessment,
     normalizeAssessmentClass,

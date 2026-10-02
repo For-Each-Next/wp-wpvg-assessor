@@ -1,3 +1,18 @@
+/**
+ * @file tests/assessment-session.test.ts
+ * Purpose: tests / assessment session.test module.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Test scenarios
+ * 3. useStorage
+ * 4. replaceGlobal
+ * 5. memoryStorage
+ * 6. logger
+ * 7. emptySession
+ * 8. sessionData
+ */
+
 import assert from "node:assert/strict";
 import test, { type TestContext } from "node:test";
 

@@ -1,4 +1,33 @@
-/** Shares reviewed drafts across tabs while keeping read snapshots per tab. */
+/**
+ * @file src/platform/browser/assessment-session.ts
+ * Purpose: Shares reviewed drafts across tabs while keeping read snapshots per tab.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. SessionDialogState
+ * 3. UnknownRecord
+ * 4. StoreText
+ * 5. RestoreText
+ * 6. Constants and state
+ * 7. createAssessmentSessionStore
+ * 8. serializeDrafts
+ * 9. emptySession
+ * 10. serializeSession
+ * 11. serializeState
+ * 12. serializeNewPageList
+ * 13. restoreSession
+ * 14. restoreDraft
+ * 15. restoreState
+ * 16. restoreAssessment
+ * 17. restoreRegistration
+ * 18. restoreNewPageList
+ * 19. selectionMap
+ * 20. record
+ * 21. string
+ * 22. boolean
+ * 23. date
+ * 24. invalidSession
+ */
 
 import type { DialogState } from "../../app/dialog-contracts.ts";
 import type {

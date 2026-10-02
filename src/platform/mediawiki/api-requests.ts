@@ -1,4 +1,21 @@
-/** Adds structured diagnostics around MediaWiki API requests. */
+/**
+ * @file src/platform/mediawiki/api-requests.ts
+ * Purpose: Adds structured diagnostics around MediaWiki API requests.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. ApiParameterValue
+ * 3. ApiParameters
+ * 4. LoggedApiRequests
+ * 5. createLoggedApiRequests
+ * 6. get
+ * 7. postWithToken
+ * 8. requireSuccessfulEdit
+ * 9. logRequestFailure
+ * 10. summarizeParams
+ * 11. countTitles
+ * 12. summarizeResponse
+ */
 
 import { asRecord } from "./response.ts";
 import type { Logger } from "../../shared/logging.ts";
@@ -127,10 +144,7 @@ function summarizeResponse(response: unknown): Record<string, unknown> {
     const responseRecord = asRecord(response);
     const query = asRecord(responseRecord?.query);
     const pages = query?.pages;
-    const pageRecord = asRecord(pages);
-    const pageList = Array.isArray(pages)
-        ? pages
-        : Object.values(pageRecord ?? {});
+    const pageList = Array.isArray(pages) ? pages : [];
     return {
         hasEdit: responseRecord?.edit != null,
         pageCount: pageList.length,

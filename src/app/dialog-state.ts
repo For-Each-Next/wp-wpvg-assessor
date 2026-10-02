@@ -1,5 +1,16 @@
 /**
- * Orchestrates dialog loading and new-page-list preparation.
+ * @file src/app/dialog-state.ts
+ * Purpose: Orchestrates dialog loading and new-page-list preparation.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. PreparedRegistrationState
+ * 3. DialogWorkflowAdapters
+ * 4. createDialogWorkflow
+ * 5. loadDialogState
+ * 6. prepareRegistrationState
+ * 7. getRegistrationSave
+ * 8. saveRegistration
  */
 
 import type {

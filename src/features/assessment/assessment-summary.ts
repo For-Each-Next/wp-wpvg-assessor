@@ -1,5 +1,16 @@
 /**
- * Builds human-readable edit summaries for assessment selections.
+ * @file src/features/assessment/assessment-summary.ts
+ * Purpose: Builds human-readable edit summaries for assessment selections.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. buildEditSummary
+ * 4. buildVideoGamesSummary
+ * 5. buildVideoGamesSummaryDetails
+ * 6. getValueLabel
+ * 7. getSelectedLabels
+ * 8. appendSummarySourceLink
  */
 
 import { msg } from "../../i18n/index.ts";

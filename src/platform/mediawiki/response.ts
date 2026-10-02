@@ -1,5 +1,15 @@
 /**
- * Decodes the small MediaWiki response shapes used by the gadget.
+ * @file src/platform/mediawiki/response.ts
+ * Purpose: Decodes the small MediaWiki response shapes used by the gadget.
+ *
+ * Table of contents:
+ * 1. UnknownRecord
+ * 2. asRecord
+ * 3. getFirstQueryPage
+ * 4. getQueryPages
+ * 5. getFirstRevision
+ * 6. getRevisionContent
+ * 7. getRequiredString
  */
 
 export type UnknownRecord = Record<string, unknown>;
@@ -21,19 +31,8 @@ export function getQueryPages(response: unknown): Array<UnknownRecord> {
     const query = asRecord(responseRecord?.query);
     const pages = query?.pages;
 
-    if (Array.isArray(pages)) {
-        return pages.flatMap(function readPage(page) {
-            const record = asRecord(page);
-            return record == null ? [] : [record];
-        });
-    }
-
-    const pageRecord = asRecord(pages);
-    if (pageRecord == null) {
-        return [];
-    }
-
-    return Object.values(pageRecord).flatMap(function readPage(page) {
+    if (!Array.isArray(pages)) return [];
+    return pages.flatMap(function readPage(page) {
         const record = asRecord(page);
         return record == null ? [] : [record];
     });
@@ -49,7 +48,7 @@ export function getFirstRevision(
 export function getRevisionContent(revision: UnknownRecord | null): string {
     const slots = asRecord(revision?.slots);
     const main = asRecord(slots?.main);
-    const content = main?.content ?? main?.["*"] ?? revision?.["*"];
+    const content = main?.content;
     if (typeof content !== "string") {
         throw new Error(
             "MediaWiki response omitted readable revision content.",

@@ -1,5 +1,24 @@
 /**
- * Plain-text catalog translation with explicit locale selection.
+ * @file src/shared/i18n.ts
+ * Purpose: Plain-text catalog translation with explicit locale selection.
+ *
+ * Table of contents:
+ * 1. MessageCatalog
+ * 2. MessageCatalogs
+ * 3. MessagePartValues
+ * 4. MessageValues
+ * 5. LocaleCatalog
+ * 6. Translator
+ * 7. TypedI18n
+ * 8. createI18n
+ * 9. createTranslator
+ * 10. getTranslatedMessage
+ * 11. resolveLocale
+ * 12. normalizeLocale
+ * 13. interpolateMessage
+ * 14. createLocaleEntry
+ * 15. interpolateMessageParts
+ * 16. appendMessagePart
  */
 
 export type MessageCatalog = Record<string, string>;

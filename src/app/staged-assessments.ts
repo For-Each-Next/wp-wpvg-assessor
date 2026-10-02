@@ -1,4 +1,20 @@
-/** Keeps reviewed drafts in the background and submits one registration edit. */
+/**
+ * @file src/app/staged-assessments.ts
+ * Purpose: Keeps reviewed drafts in the background and submits one registration edit.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. StagingOperations
+ * 3. createAssessmentStagingWorkflow
+ * 4. CachedLoaderOperations
+ * 5. createCachedDialogLoader
+ * 6. captureDraft
+ * 7. cloneDialogSnapshot
+ * 8. cloneSessionSnapshot
+ * 9. mergeCurrentDraft
+ * 10. canRegister
+ * 11. fingerprint
+ */
 
 import type {
     DialogSaveReview,

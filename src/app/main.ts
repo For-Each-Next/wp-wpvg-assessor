@@ -1,5 +1,12 @@
 /**
- * Composes the page-assessor UI, workflows, and MediaWiki adapters.
+ * @file src/app/main.ts
+ * Purpose: Composes the page-assessor UI, workflows, and MediaWiki adapters.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. start
+ * 3. createDialogPageContext
+ * 4. createMediaWikiAdapters
  */
 
 import { createAssessmentPageApi } from "../platform/mediawiki/assessment-page-api.ts";

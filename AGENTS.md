@@ -1,24 +1,62 @@
 # WPVG Assessor contributor instructions
 
-**Required UI standard:** follow the [Wikimedia Codex types and order of buttons](https://doc.wikimedia.org/codex/latest/style-guide/using-links-and-buttons.html#types-and-order-of-buttons). Use one primary progressive action per group, normal secondary actions, and quiet tertiary actions. Cancellation is neutral; reserve destructive actions for irreversible changes. Put the primary action last in horizontal flows (respecting LTR/RTL reading direction) and first when stacked. Dialog footers align to the inline end; separate ordinary buttons with `spacing-75` (12px). Codex ButtonGroup supplies its own spacing. Keep visual and keyboard order aligned.
+<!-- toc:start -->
 
-Read `CONTRIBUTING.md` and `docs/architecture.md` before changing structure.
+## Contents
 
-- Keep startup and workflows in `src/app/`, pure rules in `src/domain/`, host
-  integration in `src/platform/`, and UI in `src/features/`.
-- Keep `src/index.ts` side-effect free and export deliberate public operations.
-- Preserve preview-before-save: wiki writes require the user to choose Save
-  and use the exact reviewed talk-page lead and new-page-list text.
-- Treat page targeting, edit summaries, conflict handling, and API writes as
-  sensitive behavior. Retry only confirmed talk-page edit conflicts after
-  refetching; report uncertain outcomes and registration conflicts.
-- Render source and translated content as text. Ignore stale asynchronous
-  results and release mounted UI when closing or canceling.
-- Inject logging and notifications; keep all three locale catalogs aligned.
-- Follow Wikimedia Codex form and accessibility guidelines. Keep template,
-  TypeScript behavior, and scoped CSS together for each UI component.
-- Use the tracked lockfile and Node.js 24.14.1 or newer. Run `npm run verify`
-  for material changes. Tests are offline and never mutate live MediaWiki.
-- Generate `dist/` through the build. Keep product guidance in the README,
-  technical depth in `docs/`, and notable changes in `CHANGELOG.md`.
-- Preserve the CC0 dedication and third-party licensing limits.
+- [Scope and required reading](#scope-and-required-reading)
+- [Structure and dependencies](#structure-and-dependencies)
+- [UI and accessibility](#ui-and-accessibility)
+- [Data and lifecycle](#data-and-lifecycle)
+- [Project invariants](#project-invariants)
+- [Verification and delivery](#verification-and-delivery)
+
+<!-- toc:end -->
+
+## Scope and required reading
+
+This is an independently installable MediaWiki tool. Read [Contributing](CONTRIBUTING.md),
+[architecture](docs/architecture.md), [UI guidelines](docs/ui-guidelines.md), and
+[documentation conventions](docs/documentation.md) before changing their respective areas.
+
+## Structure and dependencies
+
+Keep startup and orchestration in `src/app/`, deterministic rules in `src/domain/`,
+host integrations in `src/platform/`, and UI ownership in `src/features/`.
+Use `src/shared/` for small host-independent capabilities, `src/i18n/` for messages,
+and `src/types/` for declarations where needed. Keep `src/index.ts` free of startup
+side effects. Inject external operations through typed contracts. Co-locate each UI
+component's template-only Vue file, TypeScript behavior, and scoped CSS.
+
+Use lowercase kebab-case module names. Keep each gadget self-contained; never import another
+project at runtime, replace its globals, or modify its styles. Use explicit public editor
+contracts when interoperating. Remove dead modules and retired browser/API shims; retain
+validation, cancellation, conflict handling, and user-data recovery.
+
+## UI and accessibility
+
+Follow the [Wikimedia Codex style guide](https://doc.wikimedia.org/codex/latest/style-guide/overview.html)
+and especially [Using links and buttons](https://doc.wikimedia.org/codex/latest/style-guide/using-links-and-buttons.html).
+Use links for navigation and buttons for actions. Apply the hierarchy, order, spacing,
+focus, feedback, and responsive rules in [UI guidelines](docs/ui-guidelines.md).
+Production Vue and Codex come from MediaWiki ResourceLoader.
+
+## Data and lifecycle
+
+Treat article text, remote responses, and translations as untrusted input. Render text with
+text nodes or Vue interpolation. Release listeners, observers, timers, backend registrations,
+and Vue mounts when their owner is disposed. Discard stale asynchronous results. Keep supported
+message catalogs aligned. Automated tests remain offline and never modify live wiki services.
+
+## Project invariants
+
+Preserve preview-before-save: save only the exact reviewed talk-page lead and new-page-list text. Keep page targeting, summaries, conflict handling, and API writes explicit. Retry only confirmed talk-page conflicts after refetching; report uncertain outcomes and registration conflicts. Preserve the CC0 dedication and third-party notices.
+
+## Verification and delivery
+
+Use Node.js `>=24.14.1` and `npm ci` with the tracked lockfile. Run
+`npm run verify` for material changes. Generate `dist/` from source; never hand-edit it.
+Regenerate and inspect screenshots after relevant UI edits. Keep three user READMEs aligned,
+maintain file headings and contents lists, and record notable changes under Unreleased in
+`CHANGELOG.md`. Preserve attribution and license boundaries. Publishing is a separate
+maintainer action; local verification does not publish anything.

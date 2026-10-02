@@ -1,5 +1,19 @@
 /**
- * Characterizes MediaWiki response decoding and protected saves.
+ * @file tests/mediawiki-adapters.test.ts
+ * Purpose: Characterizes MediaWiki response decoding and protected saves.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. pageResponse
+ * 4. PostedRequest
+ * 5. createConflictingApi
+ * 6. Test scenarios
+ * 7. loadPageBatch
+ * 8. createPageBatchApi
+ * 9. createPageBatchResponse
+ * 10. createCreationLookupApi
+ * 11. createCreationTimeApi
  */
 
 import assert from "node:assert/strict";
@@ -177,38 +191,37 @@ function createPageBatchResponse(): unknown {
     };
 }
 
-test("decodes keyed and legacy revision content", () => {
-    const keyedResult = pageApi.decodePageTextResponse({
-        curtimestamp: "start-2",
-        query: {
-            pages: {
-                42: {
-                    revisions: [
-                        {
-                            slots: { main: { "*": "keyed text" } },
-                            timestamp: "base-2",
+test("rejects obsolete keyed pages and revision content before preparing edits", () => {
+    assert.throws(
+        () =>
+            pageApi.decodePageTextResponse({
+                curtimestamp: "start",
+                query: {
+                    pages: {
+                        42: {
+                            revisions: [
+                                {
+                                    slots: { main: { "*": "old text" } },
+                                    timestamp: "base",
+                                },
+                            ],
                         },
+                    },
+                },
+            }),
+        /requested page/u,
+    );
+    assert.throws(
+        () =>
+            pageApi.decodePageTextResponse({
+                curtimestamp: "start",
+                query: {
+                    pages: [
+                        { revisions: [{ "*": "old text", timestamp: "base" }] },
                     ],
                 },
-            },
-        },
-    });
-    const legacyResult = pageApi.decodePageTextResponse({
-        curtimestamp: "start-3",
-        query: {
-            pages: [
-                {
-                    revisions: [{ "*": "legacy text", timestamp: "base-3" }],
-                },
-            ],
-        },
-    });
-
-    assert.equal(keyedResult.text, "keyed text");
-    assert.equal(legacyResult.text, "legacy text");
-    assert.throws(
-        () => pageApi.decodePageTextResponse({ curtimestamp: "start" }),
-        /requested page/u,
+            }),
+        /readable revision content/u,
     );
 });
 

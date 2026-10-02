@@ -1,5 +1,16 @@
 /**
- * Characterizes the reviewed-dialog save transaction.
+ * @file tests/reviewed-dialog-save.test.ts
+ * Purpose: Characterizes the reviewed-dialog save transaction.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. Test scenarios
+ * 4. createRegistrationSave
+ * 5. createDialogState
+ * 6. createAssessment
+ * 7. createRegistrationResult
+ * 8. createSubjectInfo
  */
 
 import assert from "node:assert/strict";

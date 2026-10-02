@@ -1,5 +1,34 @@
 /**
- * Reactive presentation and review capture for the assessment dialog.
+ * @file src/features/assessment/dialogs/assessment-dialog.ts
+ * Purpose: Reactive presentation and review capture for the assessment dialog.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. MessageType
+ * 4. SelectionGroup
+ * 5. StagedTalkReview
+ * 6. DialogAction
+ * 7. AssessmentDialogOptions
+ * 8. DialogBindings
+ * 9. createAssessmentDialogComponent
+ * 10. createAssessmentDialogBindings
+ * 11. SaveReviewRefs
+ * 12. createSaveReview
+ * 13. createAssessmentPreview
+ * 14. buildRegistrationSummary
+ * 15. buildRegistrationComparison
+ * 16. canShowRegistrationPreview
+ * 17. isRegistrationDisabled
+ * 18. getRegistrationLabel
+ * 19. formatInterfaceDate
+ * 20. getDefaultRegistration
+ * 21. reportSavePhase
+ * 22. logRegistrationPreview
+ * 23. summarizeRegistration
+ * 24. getClassLabel
+ * 25. isAssessmentImportance
+ * 26. getErrorMessage
  */
 
 import projectConfig from "../../../domain/project-config.ts";

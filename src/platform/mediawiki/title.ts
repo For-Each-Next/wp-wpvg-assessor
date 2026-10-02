@@ -1,4 +1,13 @@
 /**
+ * @file src/platform/mediawiki/title.ts
+ * Purpose: src / platform / mediawiki / title module.
+ *
+ * Table of contents:
+ * 1. getTalkPageTitle
+ * 2. getSubjectPageTitle
+ */
+
+/**
  * Resolves associated MediaWiki subject and talk titles.
  *
  * @param title - Wiki title.

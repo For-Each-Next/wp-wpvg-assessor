@@ -1,3 +1,11 @@
+<!--
+@file src/features/assessment/components/wikitext-comparison.vue
+Purpose: src / features / assessment / components / wikitext comparison module.
+
+Table of contents:
+1. Template
+-->
+
 <template>
     <div class="avgp-comparison" role="region" tabindex="0" :aria-label="label">
         <p v-if="!comparison.changed" class="avgp-comparison__message">

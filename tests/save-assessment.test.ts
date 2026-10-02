@@ -1,4 +1,13 @@
-/** Offline checks for exact assessment-only saves and unchanged reviews. */
+/**
+ * @file tests/save-assessment.test.ts
+ * Purpose: Offline checks for exact assessment-only saves and unchanged reviews.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. Test scenarios
+ * 4. createState
+ */
 
 import assert from "node:assert/strict";
 import test from "node:test";

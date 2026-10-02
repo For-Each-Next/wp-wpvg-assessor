@@ -1,3 +1,11 @@
+/**
+ * @file src/features/assessment/dialogs/category-dialog.css
+ * Purpose: src / features / assessment / dialogs / category dialog module.
+ *
+ * Table of contents:
+ * 1. Styles and responsive rules
+ */
+
 .avgp-category-dialog.cdx-dialog {
     width: calc(100vw - 2rem);
     max-width: none;

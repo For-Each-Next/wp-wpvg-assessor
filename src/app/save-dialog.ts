@@ -1,5 +1,18 @@
 /**
- * Sequences writes from the exact values reviewed in the dialog.
+ * @file src/app/save-dialog.ts
+ * Purpose: Sequences writes from the exact values reviewed in the dialog.
+ *
+ * Table of contents:
+ * 1. Imports
+ * 2. Constants and state
+ * 3. ReviewedDialogSaveOperations
+ * 4. createReviewedDialogSaveWorkflow
+ * 5. saveReviewedDialog
+ * 6. saveRegistration
+ * 7. isReviewedVideoGameAssessment
+ * 8. buildDefaultRegistrationSummary
+ * 9. isUnchangedTalkReview
+ * 10. summarizeRegistration
  */
 
 import type {

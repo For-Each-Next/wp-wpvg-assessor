@@ -1,5 +1,24 @@
 /**
- * Domain and workflow contracts for VG Page Assessor.
+ * @file src/domain/types.ts
+ * Purpose: Domain and workflow contracts for VG Page Assessor.
+ *
+ * Table of contents:
+ * 1. Constants and state
+ * 2. KnownAssessmentClass
+ * 3. KnownAssessmentImportance
+ * 4. AssessmentClass
+ * 5. AssessmentImportance
+ * 6. SelectionMap
+ * 7. AssessmentMaintenance
+ * 8. Assessment
+ * 9. AssessmentProjectOption
+ * 10. PageSnapshot
+ * 11. NewPageListSnapshot
+ * 12. AssessmentPageSnapshots
+ * 13. SubjectPageInfo
+ * 14. ExistingRegistration
+ * 15. RegistrationResult
+ * 16. PreparedTalkEdit
  */
 
 export const CLASS_VALUES = [

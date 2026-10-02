@@ -1,3 +1,11 @@
+<!--
+@file src/features/assessment/dialogs/loading-dialog.vue
+Purpose: src / features / assessment / dialogs / loading dialog module.
+
+Table of contents:
+1. Template
+-->
+
 <template>
     <cdx-dialog
         v-model:open="open"
